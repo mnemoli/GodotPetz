@@ -1,0 +1,39 @@
+[gd_scene load_steps=6 format=3 uid="uid://bsi6yf5ffnjln"]
+
+[ext_resource type="Script" path="res://toys/ball/code/ball.gd" id="1_kaxbn"]
+[ext_resource type="SpriteFrames" path="res://toys/ball/sprites/ball_frames.tres" id="2_e753u"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qsias"]
+bounce = 1.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_7twtj"]
+radius = 18.0278
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3i54y"]
+radius = 41.0
+
+[node name="RigidBody2D" type="RigidBody2D"]
+mass = 0.2
+physics_material_override = SubResource("PhysicsMaterial_qsias")
+gravity_scale = 0.0
+continuous_cd = 1
+linear_damp = 0.1
+angular_damp = 0.1
+script = ExtResource("1_kaxbn")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2_e753u")
+animation = &"used1"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_7twtj")
+
+[node name="Area2D" type="Area2D" parent="."]
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("CircleShape2D_3i54y")
+
+[connection signal="sleeping_state_changed" from="." to="." method="_on_sleeping_state_changed"]
+[connection signal="input_event" from="Area2D" to="." method="_on_input_event"]
