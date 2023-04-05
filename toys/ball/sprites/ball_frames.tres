@@ -1,9 +1,10 @@
-[gd_resource type="SpriteFrames" load_steps=32 format=3]
+[gd_resource type="SpriteFrames" load_steps=33 format=3 uid="uid://ct65l3hq5sy0f"]
 
 [ext_resource type="Texture2D" uid="uid://ew206kqgds" path="res://toys/ball/sprites/BALL_S1-RestingA2-0.png" id="1_oadmh"]
 [ext_resource type="Texture2D" uid="uid://dsvr0473icecn" path="res://toys/ball/sprites/BALL_S1-UsedA3-0.png" id="2_gwltr"]
 [ext_resource type="Texture2D" uid="uid://b44hlegu8e1n" path="res://toys/ball/sprites/BALL_S1-UsedA3-1.png" id="3_jdoq7"]
 [ext_resource type="Texture2D" uid="uid://bjqfpnamqgg7n" path="res://toys/ball/sprites/BALL_S1-UsedA3-2.png" id="4_bmksw"]
+[ext_resource type="Texture2D" uid="uid://b5w7gwnngmcta" path="res://toys/ball/sprites/Rubber Star Ball-BALL_S1_AWAY-AwayA0-4.png" id="5_ei50a"]
 [ext_resource type="Texture2D" uid="uid://b768v44hxxdjj" path="res://toys/ball/sprites/BALL_S1-UsedA3-3.png" id="5_wlvh7"]
 [ext_resource type="Texture2D" uid="uid://ca4dvsch18vo8" path="res://toys/ball/sprites/BALL_S1-UsedA3-4.png" id="6_uj351"]
 [ext_resource type="Texture2D" uid="uid://drhp2pyp8krma" path="res://toys/ball/sprites/BALL_S1-UsedA3-5.png" id="7_mnf31"]
@@ -34,6 +35,14 @@
 
 [resource]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_ei50a")
+}],
+"loop": false,
+"name": &"away",
+"speed": 15.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("1_oadmh")

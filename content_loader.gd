@@ -10,7 +10,7 @@ func _ready():
 			contentdir.list_dir_begin()
 			var file = contentdir.get_next()
 			while file != "":
-				var success = ProjectSettings.load_resource_pack("user://content/"+file)
+				var _success = ProjectSettings.load_resource_pack("user://content/"+file)
 				var toyname = file.replace(".pck", "")
 				var txt = ConfigFile.new()
 				txt.load("res://toys/" + toyname + "/" + toyname + ".cfg")

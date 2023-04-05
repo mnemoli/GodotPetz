@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://bsi6yf5ffnjln"]
 
 [ext_resource type="Script" path="res://toys/ball/code/ball.gd" id="1_kaxbn"]
-[ext_resource type="SpriteFrames" path="res://toys/ball/sprites/ball_frames.tres" id="2_e753u"]
+[ext_resource type="SpriteFrames" uid="uid://ct65l3hq5sy0f" path="res://toys/ball/sprites/ball_frames.tres" id="2_e753u"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qsias"]
 bounce = 1.0
@@ -13,17 +13,20 @@ radius = 18.0278
 radius = 41.0
 
 [node name="RigidBody2D" type="RigidBody2D"]
+y_sort_enabled = true
 mass = 0.2
 physics_material_override = SubResource("PhysicsMaterial_qsias")
 gravity_scale = 0.0
 continuous_cd = 1
+freeze_mode = 1
 linear_damp = 0.1
 angular_damp = 0.1
 script = ExtResource("1_kaxbn")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = ExtResource("2_e753u")
-animation = &"used1"
+animation = &"away"
+autoplay = "rest"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_7twtj")
