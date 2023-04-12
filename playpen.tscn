@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://dx6dnx5u4rylc"]
+[gd_scene load_steps=12 format=3 uid="uid://dx6dnx5u4rylc"]
 
 [ext_resource type="Texture2D" uid="uid://bla8ood7o60iq" path="res://images/wallpapers/Paw Print.bmp" id="1_51ffs"]
 [ext_resource type="Script" path="res://playpen.gd" id="1_66r52"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bsi6yf5ffnjln" path="res://toys/ball/ball.tscn" id="4_8rvvh"]
 [ext_resource type="PackedScene" uid="uid://cgjn74yc5d4ma" path="res://toys/case/case.tscn" id="5_rglks"]
 [ext_resource type="SpriteFrames" uid="uid://brnnbcn11g7ml" path="res://images/cursors/cursor.tres" id="6_4oxq7"]
+[ext_resource type="PackedScene" uid="uid://bf4rw2b3demd1" path="res://pet/pet.tscn" id="7_76eq7"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_hfwbp"]
 b = Vector2(-1152, 0)
@@ -126,7 +127,7 @@ sprite_frames = ExtResource("6_4oxq7")
 animation = &"pickup"
 
 [node name="case" parent="." instance=ExtResource("5_rglks")]
-position = Vector2(482, 250)
+position = Vector2(400, 133)
 
 [node name="RigidBody2D" parent="." instance=ExtResource("4_8rvvh")]
 position = Vector2(167, 201)
@@ -142,5 +143,8 @@ collision_mask = 4
 hit_from_inside = true
 collide_with_areas = true
 collide_with_bodies = false
+
+[node name="pet" parent="." instance=ExtResource("7_76eq7")]
+position = Vector2(1087, 353)
 
 [connection signal="resized" from="CanvasLayer/Control5" to="CanvasLayer/Control5" method="_on_resized"]

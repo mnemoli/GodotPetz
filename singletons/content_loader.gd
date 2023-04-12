@@ -2,6 +2,7 @@ extends Node
 
 var resources = []
 var enabled = false
+var animations: PetzAnimationResource = preload("res://animations/CAT.bhd")
 
 func _ready():
 	if enabled:
@@ -22,3 +23,5 @@ func _ready():
 		else:
 			var dir = DirAccess.open("user://")
 			dir.make_dir("content")
+
+	

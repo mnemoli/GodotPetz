@@ -33,3 +33,7 @@ func _on_lock_animation_finished():
 
 func _on_door_animation_finished():
 	$bits/lock.visible = true
+
+func open_door_for_pet():
+	$bits/lock.visible = false
+	$bits/door.play("open_front")

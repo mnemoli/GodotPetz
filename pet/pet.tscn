@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://bf4rw2b3demd1"]
+
+[ext_resource type="Script" path="res://pet/pet.gd" id="1_yoo5k"]
+[ext_resource type="Script" path="res://pet/SCP.gd" id="2_iy6ty"]
+[ext_resource type="Script" path="res://pet/Brain.gd" id="3_8qjdo"]
+[ext_resource type="Texture2D" uid="uid://c0442in6d8ly1" path="res://icon.svg" id="4_vhtq3"]
+
+[node name="pet" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_yoo5k")
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 0.067
+autostart = true
+
+[node name="SCP" type="Node" parent="."]
+script = ExtResource("2_iy6ty")
+
+[node name="Brain" type="Node" parent="."]
+script = ExtResource("3_8qjdo")
+
+[node name="Icon" type="Sprite2D" parent="."]
+position = Vector2(-2, 2)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("4_vhtq3")
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
