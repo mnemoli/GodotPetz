@@ -4,8 +4,9 @@ var scp: PetzScpResource = preload("res://animations/CAT.scp")
 var graph: Dictionary
 var actionStack = []
 var processing = false
-var current_scriptstack_pos = 0
 var current_state = scp.get_start_state()
+var script_stack = []
+var last_action = -1
 
 signal action_done
 
@@ -19,8 +20,9 @@ func push_action(goal_action):
 	actionStack = find_path(current_state, goal_action)
 
 func find_path(start_state, goal_action):
-	var action = scp.get_action(goal_action)
-	var end_state = action.endState
+	var desired_state = scp.get_action(goal_action).startState
+	if start_state == desired_state:
+		return [goal_action]
 	var explored = Dictionary()
 	var q = []
 	q.push_back({stateId = start_state, actionId = null, parent = null})
@@ -45,24 +47,46 @@ func find_path(start_state, goal_action):
 func _process(_delta):
 	if !actionStack.is_empty() and !processing:
 		var curaction = scp.get_action(actionStack.front())
-		var scriptelems = curaction.scripts[0] as Array
-		while current_scriptstack_pos < scriptelems.size():
-			if scriptelems[current_scriptstack_pos] == 0x40000033: # seq2
-				processing = true
-				var minframe = scriptelems[current_scriptstack_pos+1]
-				var maxframe = scriptelems[current_scriptstack_pos+2]
-				current_scriptstack_pos+=2
-				if maxframe < minframe:
-					print("uh oh backwards anim")
-				#print("requesting anim from " + str(minframe))
-				get_parent().play_anim(minframe, maxframe - minframe)
-				await get_parent().animation_done
-				processing = false
-			else:
-				current_scriptstack_pos+=1
-		var last = actionStack.pop_front()
-		current_scriptstack_pos = 0
-		current_state = scp.get_action(last).endState
+		script_stack = curaction.scripts[0].duplicate()
+		processing = true
+		while !script_stack.is_empty():
+			var currentelem = script_stack.pop_front()
+			match currentelem: # seq2
+				0x40000033:
+					var minframe = script_stack.pop_front()
+					var maxframe = script_stack.pop_front()
+					if maxframe < minframe:
+						print("uh oh backwards anim")
+						var temp = minframe
+						minframe = maxframe
+						maxframe = temp
+					#print("requesting anim from " + str(minframe))
+					get_parent().play_anim(minframe, maxframe - minframe)
+					await get_parent().animation_done
+				0x40000027:
+					var actionid = script_stack.pop_front()
+					var times = script_stack.pop_front()
+					if times == 0x4000002F: #rand2
+						var rand1 = script_stack.pop_front()
+						var rand2 = script_stack.pop_front()
+						times = randi_range(rand1, rand2)
+					var newelems = scp.get_action(actionid).scripts[0] as Array
+					var cop = newelems.duplicate()
+					for i in range(0, times):
+						newelems.append_array(cop)
+					newelems.append_array(script_stack)
+					script_stack = newelems
+				0x4000000F:
+					script_stack.pop_front()
+				0x40000009:
+					script_stack.pop_front()
+				_:
+					if currentelem < 0x40000000:
+						get_parent().play_anim(currentelem, 1)
+						await get_parent().animation_done
+		processing = false
+		last_action = actionStack.pop_front()
+		current_state = scp.get_action(last_action).endState
 		get_parent().update_pos()
 		if actionStack.is_empty():
 			emit_signal("action_done")

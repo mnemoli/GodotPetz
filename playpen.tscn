@@ -120,6 +120,12 @@ offset_top = 13.0
 offset_right = 74.0
 offset_bottom = 46.0
 
+[node name="Rot" type="Label" parent="CanvasLayer"]
+offset_left = 586.0
+offset_top = 30.0
+offset_right = 647.0
+offset_bottom = 63.0
+
 [node name="Cursoranims" type="AnimatedSprite2D" parent="CanvasLayer"]
 z_index = -1
 position = Vector2(123, 104)
