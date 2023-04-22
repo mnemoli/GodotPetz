@@ -10,22 +10,22 @@ func execute(pet, object, with):
 		var cursor_pos = get_viewport().get_mouse_position()
 		var vec = ((cursor_pos - pet.belly_position) as Vector2)
 		var vecl = vec.length()
-		var vecrotation = Vector2.LEFT.rotated(deg_to_rad(pet.ball_rotation))
-		var angle = rad_to_deg(Vector2.LEFT.angle_to(vec))
 		if(vecl > 700):
 			if scp.last_action in [0x20e, 0x6]:
-				pet.turn_delta = 5
-				pet.target_rotation = -angle + 360.0
+				pet.turn_delta = 1.5
+				pet.target_location = cursor_pos
 			scp.push_action(0x20e)
+			#scp.push_action(0x6)
 			await scp.action_done
-		elif(vecl < 100):
+		elif(vecl < 80):
 			pet.turn_delta = 0
+			pet.target_location = null
 			scp.push_action(130)
 			await scp.action_done
 		else:
 			if scp.last_action in [0x20e, 0x6]:
-				pet.turn_delta = 5
-				pet.target_rotation = -angle + 360.0
+				pet.turn_delta = 4.0
+				pet.target_location = cursor_pos
 			scp.push_action(0x6)
 			await scp.action_done
 			

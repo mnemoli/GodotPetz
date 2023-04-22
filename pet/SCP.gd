@@ -46,9 +46,10 @@ func find_path(start_state, goal_action):
 
 func _process(_delta):
 	if !actionStack.is_empty() and !processing:
-		var curaction = scp.get_action(actionStack.front())
-		script_stack = curaction.scripts[0].duplicate()
 		processing = true
+		var curaction = scp.get_action(actionStack.front())
+		get_parent().loop = last_action == curaction.id
+		script_stack = curaction.scripts[0].duplicate()
 		while !script_stack.is_empty():
 			var currentelem = script_stack.pop_front()
 			match currentelem: # seq2
@@ -61,7 +62,7 @@ func _process(_delta):
 						minframe = maxframe
 						maxframe = temp
 					#print("requesting anim from " + str(minframe))
-					get_parent().play_anim(minframe, maxframe - minframe)
+					get_parent().play_anim(minframe, maxframe - minframe + 1)
 					await get_parent().animation_done
 				0x40000027:
 					var actionid = script_stack.pop_front()
