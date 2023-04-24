@@ -11,14 +11,17 @@ var turn_delta = 0
 var reset = false
 var belly_position = Vector3.ZERO
 var loop = false
+var delta = 0
 @onready var rottext = get_tree().root.get_node("Root/CanvasLayer/Rot") as Label
+var last_head_rot = Vector2.ZERO
 
 signal animation_done
 
-var head_balls = [4,5,7,8,9,10,11,14,15,24,27,28,29,30,31,40,55,56,57,58,59,60,61,62]
+var head_balls = [4,5,7,8,9,10,11,14,15,24,27,28,29,30,31,37,40,55,56,57,58,59,60,61,62]
 var head_ball = 24
 var iris_balls = [27, 28]
 var eye_balls = [14, 15]
+var omitted_balls = [65, 66, 55, 56]
 
 func _ready():
 	var frame_balls = ContentLoader.animations.get_frame(0).ball_array
@@ -34,7 +37,7 @@ func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 	var head_pos2 = Vector2(head_pos.x, head_pos.y)
 	$ForwardLine.points = [head_pos2, head_pos2 + Vector2(headfwd.x, headfwd.y) * 50.0]
 	var target_location = target_sprite.global_position
-	var targetvec = (Vector3(global_position.x, global_position.y, global_position.y) + head_pos).direction_to(Vector3(target_location.x, target_location.y, 999))
+	var targetvec = (Vector3(global_position.x, global_position.y, global_position.y) + head_pos).direction_to(Vector3(target_location.x, target_location.y, target_location.y))
 	$TargetLine.points = [head_pos2, head_pos2 + Vector2(targetvec.x, targetvec.y) * 50.0]
 	head_pos /= draw_scale
 	var x = (ball_pos - head_pos).rotated(Vector3.UP, deg_to_rad(-ball_rotation))
@@ -42,9 +45,12 @@ func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 	var angle2 = asin(targetvec.x / targetvec.length())
 	angle1 = clampf(angle1, deg_to_rad(-45.0), deg_to_rad(45.0))
 	angle2 = clampf(angle2, deg_to_rad(-70.0), deg_to_rad(70.0))
+	angle1 = lerp_angle(last_head_rot.x, angle1, delta)
+	angle2 = lerp_angle(last_head_rot.y, angle2, delta)
 	x = x.rotated(Vector3.FORWARD, angle1)
 	x = x.rotated(Vector3.UP, angle2)			
-	rottext.text = str(rad_to_deg(angle1)) + "\n" + str(rad_to_deg(-angle2))
+	rottext.text = str(rad_to_deg(angle1)) + "\n" + str(rad_to_deg(-angle2)) + "\n" + str(delta * 2.0)
+	last_head_rot = Vector2(angle1, angle2)
 	return x.rotated(Vector3.UP, deg_to_rad(ball_rotation)) + head_pos
 
 func apply_iris_tracking(iris_pos: Vector3, eye_pos: Vector3, eye_size: int):
@@ -54,6 +60,9 @@ func apply_iris_tracking(iris_pos: Vector3, eye_pos: Vector3, eye_size: int):
 	iris_pos.x += targetvec.x
 	iris_pos.y += targetvec.y
 	return iris_pos
+	
+func _process(delta):
+	self.delta = delta
 
 func _draw():
 	if current_frame > -1:
@@ -93,16 +102,14 @@ func _draw():
 			var size = ball_sizes[ball.idx] / 2.0
 			pos *= draw_scale;
 			size *= draw_scale;
-			draw_circle(pos, size, Color.BLACK)
+			if ball.idx not in omitted_balls:
+				draw_circle(pos, size, Color.BLACK)
 			if ball.idx == 2:
 				draw_circle(pos, size - 1, Color.RED)
 				belly_position = pos + global_position
 				$Icon.global_position = belly_position
-			else:
-				if ball.idx == 0:
-					draw_circle(pos, size - 1, Color.MEDIUM_PURPLE)
-				else:
-					draw_circle(pos, size - 1, Color.ANTIQUE_WHITE)
+			elif ball.idx not in omitted_balls:
+				draw_circle(pos, size - 1, Color.ANTIQUE_WHITE)
 
 func _on_timer_timeout():
 	current_frame = current_frame + 1
