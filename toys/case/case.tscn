@@ -424,9 +424,8 @@ position = Vector2(-7, -36)
 [node name="bits" type="Node2D" parent="."]
 
 [node name="door" type="AnimatedSprite2D" parent="bits"]
-position = Vector2(-74, 51)
+position = Vector2(-84, 51)
 sprite_frames = SubResource("SpriteFrames_dvgkp")
-animation = &"open_front"
 autoplay = "default"
 
 [node name="petattachpoint" type="Node2D" parent="bits/door"]
