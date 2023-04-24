@@ -1,7 +1,6 @@
 extends Behaviour
 
 func execute(pet, object, with):
-	print("diddle doddle")
 	var scp = pet.get_node("SCP")
 	var case = get_tree().get_first_node_in_group("case") as Node2D
 	var door = case.find_child("door")
@@ -15,6 +14,8 @@ func execute(pet, object, with):
 	await scp.action_done
 	pet.update_pos()
 	pet.show_behind_parent = false
+	pet.reparent(get_tree().root.get_node("Root"))
+	pet.target_sprite = get_tree().get_first_node_in_group("cursor")
 	print("pushing 0x59e")
 	scp.push_action(0x59e)
 	await scp.action_done

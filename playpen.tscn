@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dx6dnx5u4rylc"]
+[gd_scene load_steps=14 format=3 uid="uid://dx6dnx5u4rylc"]
 
 [ext_resource type="Texture2D" uid="uid://bla8ood7o60iq" path="res://images/wallpapers/Paw Print.bmp" id="1_51ffs"]
 [ext_resource type="Script" path="res://playpen.gd" id="1_66r52"]
@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" uid="uid://cgjn74yc5d4ma" path="res://toys/case/case.tscn" id="5_rglks"]
 [ext_resource type="SpriteFrames" uid="uid://brnnbcn11g7ml" path="res://images/cursors/cursor.tres" id="6_4oxq7"]
 [ext_resource type="PackedScene" uid="uid://bf4rw2b3demd1" path="res://pet/pet.tscn" id="7_76eq7"]
+[ext_resource type="Script" path="res://CursorPos.gd" id="8_2tn54"]
+[ext_resource type="Texture2D" uid="uid://c0442in6d8ly1" path="res://icon.svg" id="9_5555l"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_hfwbp"]
 b = Vector2(-1152, 0)
@@ -152,5 +154,13 @@ collide_with_bodies = false
 
 [node name="pet" parent="." instance=ExtResource("7_76eq7")]
 position = Vector2(1087, 353)
+
+[node name="CursorPos" type="Node2D" parent="." groups=["cursor"]]
+script = ExtResource("8_2tn54")
+
+[node name="Icon" type="Sprite2D" parent="CursorPos"]
+visible = false
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("9_5555l")
 
 [connection signal="resized" from="CanvasLayer/Control5" to="CanvasLayer/Control5" method="_on_resized"]
