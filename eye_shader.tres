@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://dpgg2uy5h8l7p"]
+
+[ext_resource type="Shader" path="res://eye_shader.gdshader" id="1_dsk5b"]
+
+[resource]
+resource_local_to_scene = true
+shader = ExtResource("1_dsk5b")
+shader_parameter/center = null
+shader_parameter/radius = null
+shader_parameter/outline_width = null
+shader_parameter/iris_center = null
+shader_parameter/iris_radius = null
+shader_parameter/iris_outline_width = null
+shader_parameter/eyelid_tilt_direction = 1.0

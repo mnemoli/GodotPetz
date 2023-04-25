@@ -1,6 +1,6 @@
 extends Behaviour
 
-func advertise(pet, object, with):
+func advertise(_pet, _object, _with):
 	return 99
 	
 func execute(pet, object, with):

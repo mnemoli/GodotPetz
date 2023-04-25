@@ -5,7 +5,7 @@ signal behaviour_done
 
 var done = false
 
-func advertise(pet, object, with):
+func advertise(_pet, _object, _with):
 	return -1
 
 func in_registry():
