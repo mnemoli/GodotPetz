@@ -83,7 +83,7 @@ func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 	var head_pos2 = Vector2(head_pos.x, head_pos.y)
 	$ForwardLine.points = [head_pos2, head_pos2 + Vector2(headfwd.x, headfwd.y) * 50.0]
 	var target_location = target_sprite.global_position
-	var targetvec = (Vector3(global_position.x, global_position.y, global_position.y) + head_pos).direction_to(Vector3(target_location.x, target_location.y, target_location.y))
+	var targetvec = (Vector3(global_position.x, global_position.y, global_position.y) + head_pos).direction_to(Vector3(target_location.x, target_location.y, 999))
 	$TargetLine.points = [head_pos2, head_pos2 + Vector2(targetvec.x, targetvec.y) * 50.0]
 	head_pos /= draw_scale
 	# cancel existing rotation
@@ -100,6 +100,11 @@ func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 	elif diff < -60:
 		angle2 = deg_to_rad(ball_rotation - 60)
 	angle2 = lerp_angle(last_head_rot.y, angle2, delta / 2.0)	
+	diff = rad_to_deg(angle2) - ball_rotation
+	if diff > 60:
+		angle2 = deg_to_rad(ball_rotation + 60)
+	elif diff < -60:
+		angle2 = deg_to_rad(ball_rotation - 60)
 	x = x.rotated(Vector3.UP, angle2)
 	last_head_rot = Vector2(angle1, angle2)
 	rottext.text = str(rad_to_deg(angle1)) + "\n" + str(rad_to_deg(-angle2)) + "\n" + str(delta) + "\n" + str(ball_rotation - rad_to_deg(angle2))
@@ -110,8 +115,12 @@ func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 func apply_iris_tracking(iris_pos: Vector3, eye_pos: Vector3, eye_size: int):
 	eye_pos *= draw_scale
 	var target_location = target_sprite.global_position
-	var targetvec = ((target_location - (global_position + Vector2(eye_pos.x, eye_pos.y))) / draw_scale).limit_length(eye_size)
+	var targetvec = (target_location - (global_position + Vector2(eye_pos.x, eye_pos.y)))
+	targetvec /= draw_scale
+	targetvec = targetvec.limit_length(eye_size)
 	iris_pos.x += targetvec.x
+	if targetvec.y < (-eye_size / 3.0) * 2.0:
+		targetvec.y = (-eye_size / 3.0) * 2.0
 	iris_pos.y += targetvec.y
 	return iris_pos
 	
@@ -144,8 +153,8 @@ func _draw():
 				new_ball_positions[i].pos = apply_head_tracking(new_ball_positions[i].pos, new_ball_positions[head_ball].pos)
 			var iris_ctr = 0
 			for i in iris_balls:
-				new_ball_positions[i].pos = apply_iris_tracking(new_ball_positions[i].pos, new_ball_positions[eye_balls[iris_ctr]].pos, (ball_sizes[i] / 2.0) * draw_scale)
-				new_ball_positions[i].pos.z += ball_sizes[eye_balls[iris_ctr]]
+				new_ball_positions[i].pos = apply_iris_tracking(new_ball_positions[i].pos, new_ball_positions[eye_balls[iris_ctr]].pos, (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale)
+				new_ball_positions[i].pos.z += (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale
 				iris_ctr += 1
 		var ball_positions_by_id = new_ball_positions
 		new_ball_positions = new_ball_positions.values()
