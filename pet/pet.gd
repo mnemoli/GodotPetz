@@ -34,14 +34,12 @@ func polar_to_cartesian(rho, phi):
 	return Vector2(x,y)
 
 func _calculate_polygon(radius) -> PackedVector2Array:
-	var nb_points = 32
-	var points_arc = PackedVector2Array()
-	points_arc.push_back(Vector2(0,0))
-
-	for i in range(nb_points + 1):
-		var angle_point = deg_to_rad(i * (0 - 360) / nb_points - 90)
-		points_arc.push_back(Vector2(cos(angle_point), sin(angle_point)) * radius)
-	return points_arc
+	radius /= draw_scale
+	var th = 2*PI/4
+	var pts = PackedVector2Array()
+	for i in range(4):
+		pts.append(polar_to_cartesian(radius, deg_to_rad(45) + i*th))
+	return pts
 
 func _ready():
 	var frame_balls = ContentLoader.animations.get_frame(0).ball_array as Array
@@ -93,24 +91,17 @@ func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 	angle1 = clampf(angle1, deg_to_rad(-55.0), deg_to_rad(40.0))
 	angle1 = lerp_angle(last_head_rot.x, angle1, delta / 2.0)
 	x = x.rotated(Vector3.FORWARD, angle1)
-	angle2 += deg_to_rad(90)
-	var diff = rad_to_deg(angle2) - ball_rotation
-	if diff > 60:
-		angle2 = deg_to_rad(ball_rotation + 60)
-	elif diff < -60:
-		angle2 = deg_to_rad(ball_rotation - 60)
-	angle2 = lerp_angle(last_head_rot.y, angle2, delta / 2.0)	
-	diff = rad_to_deg(angle2) - ball_rotation
-	if diff > 60:
-		angle2 = deg_to_rad(ball_rotation + 60)
-	elif diff < -60:
-		angle2 = deg_to_rad(ball_rotation - 60)
+	var diff = wrapf(rad_to_deg(angle2) + 90 - ball_rotation, -180, 180)
+	diff = clampf(diff, -70, 70)
+	var last_diff = last_head_rot.y
+	angle2 = lerpf(last_diff, diff, delta / 2.0)
+	angle2 = clampf(angle2, -70, 70)
+	angle2 = deg_to_rad(ball_rotation + angle2)
 	x = x.rotated(Vector3.UP, angle2)
-	last_head_rot = Vector2(angle1, angle2)
-	rottext.text = str(rad_to_deg(angle1)) + "\n" + str(rad_to_deg(-angle2)) + "\n" + str(delta) + "\n" + str(ball_rotation - rad_to_deg(angle2))
+	last_head_rot = Vector2(angle1, diff)
+	rottext.text = "angle1 " + str(rad_to_deg(angle1)) + "\nangle2 " + str(rad_to_deg(angle2)) + "\ndelta " + str(delta) + "\nballrot - angle2 " + str(ball_rotation - rad_to_deg(angle2))
 
 	return x + head_pos
-	#return x.rotated(Vector3.UP, deg_to_rad(ball_rotation)) + head_pos
 
 func apply_iris_tracking(iris_pos: Vector3, eye_pos: Vector3, eye_size: int):
 	eye_pos *= draw_scale
@@ -170,7 +161,7 @@ func _draw():
 				size *= draw_scale;
 				ball_polys[ball.idx].position = pos
 				ball_polys[ball.idx].material.set_shader_parameter("center", pos + global_position)
-				(ball_polys[ball.idx] as Polygon2D).z_index = p.z
+				(ball_polys[ball.idx] as Polygon2D).z_index = p.z * draw_scale
 				if ball.idx in eye_balls:
 					var iriscnt = eye_balls.find(ball.idx)
 					var iris_no = iris_balls[iriscnt]
@@ -180,26 +171,6 @@ func _draw():
 				
 				if ball.idx == 2:
 					belly_position = pos + global_position
-				
-			
-#			if ball.idx in iris_balls:
-#				draw_circle(pos, size + 3, Color.DARK_GREEN)
-#				draw_circle(pos, size - 3 + 3, Color.BLACK)
-#				var iris_ctr = iris_balls.find(ball.idx)
-#				var eye_pos = ball_positions_by_id[eye_balls[iris_ctr]].pos * draw_scale
-#				var eye_size = (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale
-#			elif ball.idx in eye_balls:
-#				draw_circle(pos, size, Color.BLACK)
-#				draw_circle(pos, size - 2, Color.WHITE)
-#			else:
-#				if ball.idx not in omitted_balls:
-#					draw_circle(pos, size, Color.BLACK)
-#				if ball.idx == 2:
-#					draw_circle(pos, size - 1, Color.RED)
-#					belly_position = pos + global_position
-#					$Icon.global_position = belly_position
-#				elif ball.idx not in omitted_balls:
-#					draw_circle(pos, size - 1, Color.ANTIQUE_WHITE)
 
 func _on_timer_timeout():
 	current_frame = current_frame + 1
@@ -228,7 +199,7 @@ func play_anim(start_frame, length):
 		var diff = Vector2(rot1.x, rot1.y) - Vector2(rot2.x, rot2.y)
 		position += diff * draw_scale * -1.0
 		reset = false
-		if loop:
+		if loop and frames_length > 1:
 			current_frame = 1
 			loop = false
 	queue_redraw()
