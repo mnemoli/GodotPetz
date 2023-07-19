@@ -165,11 +165,13 @@ func _draw():
 				var ball_frame_data = frame.ball_array[ball.idx] as Dictionary
 				var p = ball.pos
 				var pos = Vector2(p.x, p.y)
-				var size = ball_sizes[ball.idx] / 2.0
+				var animballsize = frame.get("sizediffs", Dictionary()).get(ball.idx, 0)
+				var size = (ball_sizes[ball.idx] + animballsize) / 2.0
 				pos *= draw_scale;
 				size *= draw_scale;
 				ball_polys[ball.idx].position = pos
 				ball_polys[ball.idx].material.set_shader_parameter("center", pos + global_position)
+				ball_polys[ball.idx].material.set_shader_parameter("radius", float(size))
 				(ball_polys[ball.idx] as Polygon2D).z_index = p.z * draw_scale
 				if ball.idx in eye_balls:
 					var iriscnt = eye_balls.find(ball.idx)

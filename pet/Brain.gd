@@ -7,7 +7,7 @@ var scp: Node
 
 func _ready():
 	if processing:
-		var bhav = load("res://behaviour/exitPetDoor.gd").new()
+		var bhav = load("res://behaviour/testbhav.gd").new()
 		add_child(bhav)
 		bhav.behaviour_done.connect(create_new_goal)
 		pet = get_parent()
