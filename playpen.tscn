@@ -128,6 +128,12 @@ offset_top = 30.0
 offset_right = 647.0
 offset_bottom = 63.0
 
+[node name="Rot2" type="Label" parent="CanvasLayer"]
+offset_left = 780.0
+offset_top = 114.0
+offset_right = 841.0
+offset_bottom = 147.0
+
 [node name="Cursoranims" type="AnimatedSprite2D" parent="CanvasLayer"]
 z_index = -1
 position = Vector2(123, 104)
@@ -153,7 +159,7 @@ collide_with_areas = true
 collide_with_bodies = false
 
 [node name="pet" parent="." instance=ExtResource("7_76eq7")]
-position = Vector2(323, 102)
+position = Vector2(889, 697)
 
 [node name="CursorPos" type="Node2D" parent="." groups=["cursor"]]
 script = ExtResource("8_2tn54")
@@ -164,3 +170,5 @@ scale = Vector2(0.2, 0.2)
 texture = ExtResource("9_5555l")
 
 [connection signal="resized" from="CanvasLayer/Control5" to="CanvasLayer/Control5" method="_on_resized"]
+
+[editable path="pet"]

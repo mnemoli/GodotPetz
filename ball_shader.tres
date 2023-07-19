@@ -7,3 +7,4 @@ shader = ExtResource("1_kflw4")
 shader_parameter/center = null
 shader_parameter/radius = null
 shader_parameter/outline_width = null
+shader_parameter/fuzz = 1.0

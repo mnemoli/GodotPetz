@@ -23,17 +23,18 @@ script = ExtResource("3_8qjdo")
 
 [node name="Icon" type="Sprite2D" parent="."]
 visible = false
-position = Vector2(-2, 2)
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("4_vhtq3")
 
 [node name="ForwardLine" type="Line2D" parent="."]
 visible = false
-points = PackedVector2Array(0, 0, -50, 0)
+z_index = 999
+points = PackedVector2Array(0, 0, 0, -50)
 width = 5.0
 
 [node name="TargetLine" type="Line2D" parent="."]
 visible = false
+z_index = 999
 points = PackedVector2Array(0, 0, -50, 0)
 width = 5.0
 default_color = Color(1, 0, 0, 1)

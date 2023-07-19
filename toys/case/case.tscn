@@ -430,7 +430,7 @@ autoplay = "default"
 
 [node name="petattachpoint" type="Node2D" parent="bits/door"]
 show_behind_parent = true
-position = Vector2(-6, -136)
+position = Vector2(6, -50)
 
 [node name="doorarea" type="Area2D" parent="bits/door"]
 position = Vector2(-2, 0)

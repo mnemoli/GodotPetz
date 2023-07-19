@@ -3,13 +3,16 @@ extends Node
 var pet: Node2D
 var scp: Node
 
+@export var processing = true
+
 func _ready():
-	var bhav = load("res://behaviour/exitPetDoor.gd").new()
-	add_child(bhav)
-	bhav.behaviour_done.connect(create_new_goal)
-	pet = get_parent()
-	scp = get_parent().get_node("SCP")
-	bhav.call_deferred("execute", pet, null, null)
+	if processing:
+		var bhav = load("res://behaviour/exitPetDoor.gd").new()
+		add_child(bhav)
+		bhav.behaviour_done.connect(create_new_goal)
+		pet = get_parent()
+		scp = get_parent().get_node("SCP")
+		bhav.call_deferred("execute", pet, null, null)
 
 func create_new_goal():
 	print("generating new goal")

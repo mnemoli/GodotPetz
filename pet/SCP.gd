@@ -56,34 +56,37 @@ func _process(_delta):
 				0x40000033:
 					var minframe = script_stack.pop_front()
 					var maxframe = script_stack.pop_front()
+					var direction = 1
 					if maxframe < minframe:
 						print("uh oh backwards anim")
-						var temp = minframe
-						minframe = maxframe
-						maxframe = temp
+						direction = -1
 					#print("requesting anim from " + str(minframe))
-					get_parent().play_anim(minframe, maxframe - minframe + 1)
+					get_parent().play_anim(minframe, abs(maxframe - minframe) + 1, direction)
 					await get_parent().animation_done
-				0x40000027:
+				0x40000027: #playaction2
 					var actionid = script_stack.pop_front()
 					var times = script_stack.pop_front()
+					print("playing " + str(actionid) + " " + str(times) + " times")
 					if times == 0x4000002F: #rand2
 						var rand1 = script_stack.pop_front()
 						var rand2 = script_stack.pop_front()
 						times = randi_range(rand1, rand2)
 					var newelems = scp.get_action(actionid).scripts[0] as Array
+					newelems.push_back(0x40000014)
 					var cop = newelems.duplicate()
 					for i in range(0, times):
 						newelems.append_array(cop)
 					newelems.append_array(script_stack)
 					script_stack = newelems
-				0x4000000F:
+				0x4000000F: #enablefudgeaim1
 					script_stack.pop_front()
-				0x40000009:
+				0x40000009: #cuecode1
 					script_stack.pop_front()
-				_:
-					if currentelem < 0x40000000:
-						get_parent().play_anim(currentelem, 1)
+				0x40000014: #gluescriptsball1
+					get_parent().update_pos()
+				_: 
+					if currentelem < 0x40000000: #frame number
+						get_parent().play_anim(currentelem, 1, 1)
 						await get_parent().animation_done
 		processing = false
 		last_action = actionStack.pop_front()

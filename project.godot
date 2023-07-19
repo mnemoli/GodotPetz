@@ -29,6 +29,11 @@ mouse_cursor/custom_image="res://images/cursors/Cursor1.png"
 
 project/assembly_name="OpenPetz"
 
+[editor]
+
+movie_writer/movie_file="C:/Users/fract/Documents/Godot/mov.png"
+movie_writer/fps=30
+
 [physics]
 
 2d/run_on_separate_thread=true

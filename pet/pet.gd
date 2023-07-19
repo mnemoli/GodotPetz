@@ -4,18 +4,21 @@ var texture = preload("res://ball_shader.tres")
 var eye_texture = preload("res://eye_shader.tres")
 @export var tex: Texture2D
 @export var draw_scale = 0.5;
-var current_frame = -1;
+var current_frame = -999;
 var start_frame = 0
+var last_frame = 0
 var frames_length = 20
+var anim_direction = 1
 var ball_rotation = 0
 var target_sprite = null
 var last_chest_pos = Vector3.ZERO
 var turn_delta = 0
-var reset = false
-var belly_position = Vector3.ZERO
+var reset = true
+var belly_position = Vector2.ZERO
 var loop = false
 var delta = 0
 @onready var rottext = get_tree().root.get_node("Root/CanvasLayer/Rot") as Label
+@onready var rottext2 = get_tree().root.get_node("Root/CanvasLayer/Rot2") as Label
 var last_head_rot = Vector2.ZERO
 
 signal animation_done
@@ -77,29 +80,31 @@ func custom_sort(a: Dictionary, b: Dictionary):
 	
 func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 	head_pos *= draw_scale
-	var headfwd = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+	var headfwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
 	var head_pos2 = Vector2(head_pos.x, head_pos.y)
-	$ForwardLine.points = [head_pos2, head_pos2 + Vector2(headfwd.x, headfwd.y) * 50.0]
 	var target_location = target_sprite.global_position
-	var targetvec = (Vector3(global_position.x, global_position.y, global_position.y) + head_pos).direction_to(Vector3(target_location.x, target_location.y, 999))
-	$TargetLine.points = [head_pos2, head_pos2 + Vector2(targetvec.x, targetvec.y) * 50.0]
+	var targetvec = Vector3(target_location.x, target_location.y, target_location.y) - Vector3(global_position.x, global_position.y, global_position.y)
+	var headfwd2d = Vector2(headfwd.x, headfwd.y)
+	var target2d = Vector2(targetvec.x, targetvec.y)
+	$ForwardLine.points = [Vector2.ZERO, headfwd2d * 50.0]
+	$TargetLine.points = [Vector2.ZERO, target2d]
 	head_pos /= draw_scale
-	# cancel existing rotation
-	var x = (ball_pos - head_pos).rotated(Vector3.UP, deg_to_rad(-ball_rotation))
-	var angle1 = atan2(targetvec.y, targetvec.z)
-	var angle2 = asin(targetvec.x)
-	angle1 = clampf(angle1, deg_to_rad(-55.0), deg_to_rad(40.0))
-	angle1 = lerp_angle(last_head_rot.x, angle1, delta / 2.0)
-	x = x.rotated(Vector3.FORWARD, angle1)
-	var diff = wrapf(rad_to_deg(angle2) + 90 - ball_rotation, -180, 180)
-	diff = clampf(diff, -70, 70)
-	var last_diff = last_head_rot.y
-	angle2 = lerpf(last_diff, diff, delta / 2.0)
-	angle2 = clampf(angle2, -70, 70)
-	angle2 = deg_to_rad(ball_rotation + angle2)
-	x = x.rotated(Vector3.UP, angle2)
-	last_head_rot = Vector2(angle1, diff)
-	rottext.text = "angle1 " + str(rad_to_deg(angle1)) + "\nangle2 " + str(rad_to_deg(angle2)) + "\ndelta " + str(delta) + "\nballrot - angle2 " + str(ball_rotation - rad_to_deg(angle2))
+	var x = (ball_pos - head_pos)
+	var test = Vector2(headfwd.x, headfwd.z).angle_to(Vector2(targetvec.x, targetvec.z))
+	var angle = -test
+	angle = clampf(angle, deg_to_rad(-60.0), deg_to_rad(60))
+	angle = lerp_angle(last_head_rot.x, angle, delta)
+	x = x.rotated(Vector3.UP, angle)
+	var angle2 = Vector2(headfwd.x, headfwd.y).angle_to(Vector2(targetvec.x, targetvec.y))
+	angle2 = angle2
+	angle2 = clampf(angle2, deg_to_rad(-20), deg_to_rad(20))
+	angle2 = lerp_angle(last_head_rot.y, angle2, delta)
+	var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+	if ball_rotation >= 180 or ball_rotation < 0:
+		rotaxis = -rotaxis
+	x = x.rotated(rotaxis, angle2)
+	last_head_rot = Vector2(angle, angle2)
+	rottext.text = "angle1 " + str(rad_to_deg(angle)) + "\nangle2 " + str(rad_to_deg(angle2)) + "\ndelta " + str(delta) + "\nballrot " + str(ball_rotation)
 
 	return x + head_pos
 
@@ -119,26 +124,30 @@ func _process(delta):
 	self.delta = delta
 
 func _draw():
-	if current_frame > -1:
-		var this_turn_delta = turn_delta
-		if target_sprite != null and turn_delta > 0:
-			this_turn_delta = get_next_turn_delta()
-			ball_rotation += this_turn_delta
-			ball_rotation = fmod(ball_rotation + 360.0, 360.0)
+	var next_chest_pos
+	if target_sprite or turn_delta:
+		ball_rotation = fmod(ball_rotation + get_next_rotation(), 360.0)
+	var fwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+	if current_frame != -999:
 		var ball_sizes = ContentLoader.animations.get_ball_sizes()
+		var last_frame_data = ContentLoader.animations.get_frame(last_frame) as Dictionary
 		var frame = ContentLoader.animations.get_frame(start_frame + current_frame) as Dictionary
 		var new_ball_positions = Dictionary()
-		var this_chest_pos = frame.ball_array[6].position
-		var chestrot = this_chest_pos.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+		var center = frame.ball_array[2].position
+		var last_center = last_frame_data.ball_array[2].position
+		var vec_to_new_center = center - last_center
+		vec_to_new_center = vec_to_new_center.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+		vec_to_new_center = vec_to_new_center.rotated(Vector3.LEFT, deg_to_rad(15))
+		self.position += Vector2(vec_to_new_center.x, vec_to_new_center.y) * draw_scale
 		for i in ball_sizes.size():
 			var ball = frame.ball_array[i] as Dictionary
 			var ball_position = ball.position
+			ball_position -= center
 			var rotated = ball_position.rotated(Vector3.UP, deg_to_rad(ball_rotation))
-			rotated = chestrot + (rotated - chestrot).rotated(Vector3.UP, deg_to_rad(this_turn_delta))
 			rotated = rotated.rotated(Vector3.LEFT, deg_to_rad(15))
 			new_ball_positions[i] = {idx = i, pos = rotated}
 			if i == 6:
-				last_chest_pos = rotated
+				next_chest_pos = rotated
 		if target_sprite != null:
 			for i in head_balls:
 				new_ball_positions[i].pos = apply_head_tracking(new_ball_positions[i].pos, new_ball_positions[head_ball].pos)
@@ -171,50 +180,51 @@ func _draw():
 				
 				if ball.idx == 2:
 					belly_position = pos + global_position
+					
+		last_chest_pos = next_chest_pos
+		last_frame = start_frame + current_frame
 
 func _on_timer_timeout():
-	current_frame = current_frame + 1
-	if current_frame == frames_length:
+	current_frame = current_frame + (1 * self.anim_direction)
+	if abs(current_frame) == frames_length:
 		emit_signal("animation_done")
 	else:
 		current_frame = current_frame % frames_length
 		queue_redraw()
 
-func play_anim(start_frame, length):
+func play_anim(start_frame, length, direction):
 	self.start_frame = start_frame
 	self.frames_length = length
 	self.current_frame = 0
+	self.anim_direction = direction
 	if reset:
-		var this_turn_delta = 0.0
-		if turn_delta > 0 and target_sprite != null:
-			this_turn_delta = get_next_turn_delta()
-		var frame = ContentLoader.animations.get_frame(start_frame + current_frame) as Dictionary
+		var frame = ContentLoader.animations.get_frame(start_frame) as Dictionary
+		var center = frame.ball_array[2].position
 		var chest_pos_new_frame = frame.ball_array[6].position
-		var chestrot = chest_pos_new_frame.rotated(Vector3.UP, deg_to_rad(ball_rotation))
-		chestrot = chestrot.rotated(Vector3.LEFT, deg_to_rad(15))
+		chest_pos_new_frame -= center
 		var rot1 = chest_pos_new_frame.rotated(Vector3.UP, deg_to_rad(ball_rotation))
 		rot1 = rot1.rotated(Vector3.LEFT, deg_to_rad(15))
-		rot1 = rot1.rotated(Vector3.UP, deg_to_rad(this_turn_delta))
-		var rot2 = last_chest_pos
-		var diff = Vector2(rot1.x, rot1.y) - Vector2(rot2.x, rot2.y)
-		position += diff * draw_scale * -1.0
+		var diff = Vector2(last_chest_pos.x, last_chest_pos.y) - Vector2(rot1.x, rot1.y)
+		position += diff * draw_scale
+		last_chest_pos = Vector3.ZERO
 		reset = false
+		last_frame = start_frame + current_frame
 		if loop and frames_length > 1:
-			current_frame = 1
+			current_frame = 1 * direction
 			loop = false
 	queue_redraw()
 	
 func update_pos():
 	reset = true
 
-func get_next_turn_delta():
-	var forward = Vector2.LEFT.rotated(deg_to_rad(ball_rotation))
-	var vec_to_target = target_sprite.global_position - belly_position
-	vec_to_target.y *= -1.0
-	$TargetLine.points = [Vector2.ZERO, vec_to_target.normalized() * 50.0]
-	var angle = forward.angle_to(vec_to_target)
-	angle = rad_to_deg(angle)
-	var x = min(turn_delta, abs(angle)) * sign(angle)
-	if abs(x) < 1.0:
-		return 0.0
-	return x
+func get_next_rotation():
+	if target_sprite:
+		var vec = (target_sprite.global_position - belly_position) as Vector2
+		var fwd = Vector2.UP.rotated(deg_to_rad(ball_rotation))
+		fwd.x *= -1.0
+		var angle = fwd.angle_to(vec)
+		angle = rad_to_deg(angle)
+		if angle > 180:
+			angle -= 360
+		rottext2.text = "vec: " + str(vec) + "\nangle: " + str(angle) + "\noutput: " + str(min(turn_delta, abs(angle)) * -sign(angle))
+		return min(turn_delta, abs(angle)) * -sign(angle)
