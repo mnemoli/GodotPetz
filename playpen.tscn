@@ -159,7 +159,7 @@ collide_with_areas = true
 collide_with_bodies = false
 
 [node name="pet" parent="." instance=ExtResource("7_76eq7")]
-position = Vector2(889, 697)
+position = Vector2(493, 345)
 
 [node name="CursorPos" type="Node2D" parent="." groups=["cursor"]]
 script = ExtResource("8_2tn54")

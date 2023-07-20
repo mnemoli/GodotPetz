@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://dyr110gufhif0"]
+
+[ext_resource type="Shader" path="res://line_shader.gdshader" id="1_20pov"]
+
+[resource]
+shader = ExtResource("1_20pov")
+shader_parameter/max_uvs = null
+shader_parameter/center = null
