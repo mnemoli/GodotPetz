@@ -7,7 +7,6 @@
 [ext_resource type="Texture2D" uid="uid://c0442in6d8ly1" path="res://icon.svg" id="4_vhtq3"]
 
 [node name="pet" type="Node2D"]
-y_sort_enabled = true
 script = ExtResource("1_yoo5k")
 tex = ExtResource("2_e8t8x")
 

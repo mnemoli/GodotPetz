@@ -12,7 +12,7 @@ var face_extension = 0
 var ear_extension = 0
 var head_enlargement = Vector2(100, 0)
 var foot_enlargement = Vector2(100, 0)
-var moves = {}
+var moves = []
 var balls = {}
 var lines = []
 var addballs = {}
@@ -141,11 +141,7 @@ func _init(file_path):
 		if split_line.size() > 4:
 			relative_ball = int(split_line[4].get_string())
 		var pos = Vector3(x, y, z)
-		var ar = moves.get(base, [])
-		ar.append({position = pos, relative_to = relative_ball})
-		moves[base] = ar
-		var ball = self.balls[base]
-		ball.position = pos
+		moves.push_back({base = base, position = pos, relative_to = relative_ball})
 		
 	file.close()
 	

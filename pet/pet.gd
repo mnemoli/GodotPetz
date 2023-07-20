@@ -70,7 +70,7 @@ func calculate_rectangle(start: Vector2, end: Vector2, start_width: int, end_wid
 func calculate_addball_position(ball_no, ball_positions_3d):
 	var baseball = lnz.addballs[ball_no].base
 	var base_pos = ball_positions_3d[baseball]
-	var vec = lnz.addballs[ball_no].position
+	var vec = lnz.addballs[ball_no].position * draw_scale
 	vec = vec.rotated(Vector3.UP, ball_rotation)
 	vec = vec.rotated(Vector3.LEFT, deg_to_rad(15))
 	return vec + base_pos.pos
@@ -124,6 +124,8 @@ func _ready():
 	test_texture.width = 1
 			
 	for l in lnz.lines:
+		if l.start in omitted_balls or l.end in omitted_balls:
+			continue
 		var line = Polygon2D.new()
 		add_child(line)
 		line.name = "Line"
@@ -136,7 +138,7 @@ func _ready():
 		if l.l_color_index == -1:
 			line.material.set_shader_parameter("outline2_enabled", 0.0)
 
-func custom_sort(a: Dictionary, b: Dictionary):
+func sort_by_z(a: Dictionary, b: Dictionary):
 	return a.pos.z < b.pos.z
 	
 func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
@@ -212,6 +214,26 @@ func _draw():
 		for i in lnz.addballs:
 			var ball_position = calculate_addball_position(i, new_ball_positions)
 			new_ball_positions[i] = {idx = i, pos = ball_position}
+				
+		for m in lnz.moves:
+			var base = m.base 
+			var ball_pos = new_ball_positions[base].pos
+			var vec: Vector3 = m.position
+			vec *= draw_scale
+			vec = vec.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			vec = vec.rotated(Vector3.LEFT, deg_to_rad(15))
+			new_ball_positions[base].pos = ball_pos + vec
+			
+		for m in lnz.project_ball:
+			var base = m.base
+			var projected = m.ball
+			var amt = m.amount
+			var base_pos = new_ball_positions[base].pos
+			var projected_pos = new_ball_positions[projected].pos
+			var vec = projected_pos - base_pos
+			vec *= amt / 100.0
+			new_ball_positions[projected].pos = base_pos + vec
+			
 		if target_sprite != null:
 			for i in head_balls:
 				new_ball_positions[i].pos = apply_head_tracking(new_ball_positions[i].pos, new_ball_positions[head_ball].pos)
@@ -223,35 +245,41 @@ func _draw():
 				new_ball_positions[i].pos = apply_iris_tracking(new_ball_positions[i].pos, new_ball_positions[eye_balls[iris_ctr]].pos, (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale)
 				new_ball_positions[i].pos.z += (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale
 				iris_ctr += 1
-		var ball_positions_by_id = new_ball_positions
+			
+		
 		new_ball_positions = new_ball_positions.values()
-		new_ball_positions.sort_custom(custom_sort)
+		new_ball_positions.sort_custom(sort_by_z)
 
+		var ctr = 0
 		for ball in new_ball_positions:
 			if ball.idx not in iris_balls and ball.idx not in omitted_balls:
 				var p = ball.pos
 				var pos = Vector2(p.x, p.y)
 				var animballsize = frame.get("sizediffs", Dictionary()).get(ball.idx, 0)
 				if ball.idx < ball_sizes.size():
-					var size = (ball_sizes[ball.idx] + animballsize) / 2.0
+					var size = (ball_sizes[ball.idx] + animballsize + lnz.balls[ball.idx].size) / 2.0
 					size *= ball_scale;
 					ball_polys[ball.idx].material.set_shader_parameter("radius", float(size))
+					#ball_polys[ball.idx].visible = false
 				pos *= draw_scale;
 				ball_polys[ball.idx].position = pos
 				ball_polys[ball.idx].material.set_shader_parameter("center", pos + global_position)
-				(ball_polys[ball.idx] as Polygon2D).z_index = p.z
+				move_child(ball_polys[ball.idx], ctr)
 				if ball.idx in eye_balls:
 					var iriscnt = eye_balls.find(ball.idx)
 					var iris_no = iris_balls[iriscnt]
-					var iris = ball_positions_by_id[iris_no]
+					var iris = new_ball_positions[iris_no]
 					pos = Vector2(iris.pos.x, iris.pos.y) * draw_scale
 					ball_polys[ball.idx].material.set_shader_parameter("iris_center", pos + global_position)
 				
 				if ball.idx == 2:
 					belly_position = pos + global_position
 			
+				ctr += 1
+			
 		var linectr = 0		
 		for line in lnz.lines:
+			#lines[linectr].visible = false
 			var start = ball_polys[line.start]
 			var end = ball_polys[line.end]
 			var raw_radius_start = ball_polys[line.start].material.get_shader_parameter("radius")
@@ -261,7 +289,8 @@ func _draw():
 			var rect = calculate_rectangle(start.position, end.position, start_radius, end_radius)
 			lines[linectr].polygon = rect[0]
 			lines[linectr].uv = rect[1]
-			lines[linectr].z_index = min(start.z_index, end.z_index) - 1
+			var z_sort = min(start.get_index(), end.get_index()) - 1
+			move_child(lines[linectr], z_sort)
 			lines[linectr].position = start.position + (end.position - start.position) / 2.0
 			lines[linectr].material.set_shader_parameter("max_uvs", rect[2])
 			lines[linectr].material.set_shader_parameter("center", lines[linectr].position + global_position)
@@ -317,3 +346,5 @@ func get_next_rotation():
 			angle -= 360
 		rottext2.text = "vec: " + str(vec) + "\nangle: " + str(angle) + "\noutput: " + str(min(turn_delta, abs(angle)) * -sign(angle))
 		return min(turn_delta, abs(angle)) * -sign(angle)
+	elif turn_delta:
+		return turn_delta
