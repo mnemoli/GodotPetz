@@ -4,6 +4,7 @@ uniform float radius;
 uniform float outline_width;
 uniform sampler2D tex : hint_default_white, filter_nearest, repeat_enable;
 uniform float fuzz = 1.0;
+uniform vec3 color = vec3(1.0);
 
 float random(float x) {
     return fract(sin(dot(vec2(x,x),
@@ -38,4 +39,5 @@ void fragment() {
 	}
 	vec2 uv = ((frag - center) / vec2(textureSize(tex, 0)));
 	COLOR = (outline * vec4(vec3(0.0), 1.0) + (1.0 - outline) * texture(tex, uv)) * inside;
+	COLOR = mix(COLOR, vec4(color, 1.0), 0.25) * inside;
 }

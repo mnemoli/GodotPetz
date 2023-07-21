@@ -5,16 +5,16 @@ var cursor
 func advertise(_pet, _object, _with):
 	return 99
 	
-func execute(pet, object, with):
+func execute(pet, _object, _with):
 	var scp = pet.get_node("SCP")
 	cursor = get_tree().get_first_node_in_group("cursor")
+	pet.ball_rotation = 180
 	#Engine.time_scale = 0.5
 	while true:
 		var cursor_pos = cursor.global_position
 		var vec = ((cursor_pos - pet.belly_position) as Vector2)
 		var vecl = vec.length()
 		var screen_boundaries = get_viewport().get_visible_rect()
-	#pet.ball_rotation = -90
 	#pet.target_sprite = cursor
 	#scp.push_action(40)
 		if(vecl > 500):

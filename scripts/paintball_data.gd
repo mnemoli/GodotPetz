@@ -12,6 +12,7 @@ class_name PaintBallData
 @export var texture_id = -1
 @export var anchored = 0
 
+@warning_ignore("shadowed_variable")
 func _init(
  base: int,
  size: int,

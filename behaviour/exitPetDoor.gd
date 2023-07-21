@@ -1,6 +1,6 @@
 extends Behaviour
 
-func execute(pet, object, with):
+func execute(pet, _object, _with):
 	Engine.time_scale = 1.0
 	var scp = pet.get_node("SCP")
 	var case = get_tree().get_first_node_in_group("case") as Node2D

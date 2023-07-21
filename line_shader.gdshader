@@ -17,7 +17,7 @@ void vertex() {
 
 void fragment() {
 	float outline = step(UV.y, 1.0) * outline1_enabled;
-	float outline2 = 1.0 - step(UV.y, max_y - 1.0) * outline2_enabled;
+	float outline2 = (1.0 - step(UV.y, max_y - 1.0)) * outline2_enabled;
 	vec2 uv = ((FRAGCOORD.xy - center) / vec2(textureSize(tex, 0)));
 	outline = outline + outline2;
 	float inside = 1.0 - outline;

@@ -10,6 +10,7 @@ class_name LineData
 @export var l_color_index = 0
 @export var r_color_index = 0
 
+@warning_ignore("shadowed_variable")
 func _init(
 	start: int, 
 	end: int, 

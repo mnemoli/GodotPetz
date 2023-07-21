@@ -7,7 +7,7 @@ var scp: Node
 
 func _ready():
 	if processing:
-		var bhav = load("res://behaviour/testbhav.gd").new()
+		var bhav = load("res://behaviour/chaseCursor.gd").new()
 		add_child(bhav)
 		bhav.behaviour_done.connect(create_new_goal)
 		pet = get_parent()
@@ -16,7 +16,7 @@ func _ready():
 
 func create_new_goal():
 	print("generating new goal")
-	var rated: Dictionary
+	var rated = Dictionary()
 	for bhav in BehaviourRegistry.behaviours.values():
 		var rating = bhav.advertise(pet, Cursor, null)
 		rated[rating] = bhav

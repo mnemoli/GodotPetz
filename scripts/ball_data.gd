@@ -13,6 +13,7 @@ class_name BallData
 @export var rotation = Vector3.ZERO
 @export var outline_color_index = 0
 
+@warning_ignore("shadowed_variable")
 func _init(
  size: int,
  position: Vector3,

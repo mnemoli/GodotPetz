@@ -14,6 +14,7 @@ class_name AddBallData
 @export var texture_id = -1
 @export var outline_color_index = 0
 
+@warning_ignore("shadowed_variable")
 func _init(
  base: int,
  ball_no: int,

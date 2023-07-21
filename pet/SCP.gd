@@ -86,11 +86,328 @@ func _process(_delta):
 					get_parent().update_pos()
 				_: 
 					if currentelem < 0x40000000: #frame number
-						get_parent().play_anim(currentelem, 1, 1)
-						await get_parent().animation_done
+						if currentelem < 0 or currentelem > 16040:
+							print("BIG MISTAKE")
+						else:
+							get_parent().play_anim(currentelem, 1, 1)
+							await get_parent().animation_done
+					else:
+						var verbname = scpVerbs[currentelem] as String
+						var argcount = verbname.right(1)
+						if argcount.is_valid_int():
+							argcount = argcount as int
+						else:
+							argcount = 0
+						for n in range(argcount):
+							var top = script_stack.pop_front()
+							if top == 0x4000002F: #rand2
+								script_stack.pop_front()
+								script_stack.pop_front()
 		processing = false
 		last_action = actionStack.pop_front()
 		current_state = scp.get_action(last_action).endState
 		get_parent().update_pos()
 		if actionStack.is_empty():
 			emit_signal("action_done")
+
+var scpVerbs = {
+	0x40000000 : "startPos",
+
+0x40000001 : "actionDone0",
+
+0x40000002 : "actionStart1",
+
+0x40000003 : "alignScripts0",
+
+0x40000004 : "alignBallToPtSetup3",
+
+0x40000005 : "alignBallToPtGo0",
+
+0x40000006 : "alignBallToPtStop0",
+
+0x40000007 : "alignFudgeBallToPtSetup2",
+
+0x40000008 : "blendToFrame3",
+
+0x40000009 : "cueCode1",
+
+0x4000000A : "debugCode1",
+
+0x4000000B : "disableFudgeAim1",
+
+0x4000000C : "disableSwing0",
+
+0x4000000D : "doneTalking0",
+
+0x4000000E : "doneTalking1",
+
+0x4000000F : "enableFudgeAim1",
+
+0x40000010 : "enableSwing1",
+
+0x40000011 : "endBlock0",
+
+0x40000012 : "endBlockAlign0",
+
+0x40000013 : "glueScripts0",
+
+0x40000014 : "glueScriptsBall1",
+
+0x40000015 : "interruptionsDisable0",
+
+0x40000016 : "interruptionsEnable0",
+
+0x40000017 : "lookAtLocation2",
+
+0x40000018 : "lookAtLocationEyes2",
+
+0x40000019 : "lookAtRandomPt0",
+
+0x4000001A : "lookAtRandomPtEyes0",
+
+0x4000001B : "lookAtSprite1",
+
+0x4000001C : "lookAtSpriteEyes1",
+
+0x4000001D : "lookAtUser0",
+
+0x4000001E : "lookForward0",
+
+0x4000001F : "lookForwardEyes0",
+
+0x40000020 : "null0",
+
+0x40000021 : "null1",
+
+0x40000022 : "null2",
+
+ 
+
+0x40000023 : "null3",
+
+ 
+
+0x40000024 : "null4",
+
+ 
+
+0x40000025 : "null5",
+
+ 
+
+0x40000026 : "null6",
+
+ 
+
+0x40000027 : "playAction2",
+
+ 
+
+0x40000028 : "playActionRecall2",
+
+ 
+
+0x40000029 : "playActionStore2",
+
+ 
+
+0x4000002A : "playLayeredAction3",
+
+ 
+
+0x4000002B : "playLayeredAction4",
+
+ 
+
+0x4000002C : "playLayeredActionCallback5",
+
+ 
+
+0x4000002D : "playLayeredActionCallback6",
+
+ 
+
+0x4000002E : "playTransitionToAction1",
+
+ 
+
+0x4000002F : "rand2",
+
+ 
+
+0x40000030 : "resetFudger1",
+
+ 
+
+0x40000031 : "resumeFudging1",
+
+ 
+
+0x40000032 : "resumeLayerRotation1",
+
+ 
+
+0x40000033 : "sequence2",
+
+0x40000034 : "sequenceToEnd1",
+
+0x40000035 : "sequenceToStart1",
+
+0x40000036 : "setBlendOffset3",
+
+0x40000037 : "setFudgeAimDefaults5",
+
+0x40000038 : "setFudgerDrift2",
+
+0x40000039 : "setFudgerRate2",
+
+0x4000003A : "setFudgerTarget2",
+
+0x4000003B : "setFudgerNow2",
+
+0x4000003C : "setHeadTrackAcuteness",
+
+0x4000003D : "setHeadTrackMode1",
+
+0x4000003E : "setLayeredBaseFrame2",
+
+0x4000003F : "setMotionScale1",
+
+0x40000040 : "setMotionScale2",
+
+0x40000041 : "setReverseHeadTrack1",
+
+0x40000042 : "setRotationPivotBall1",
+
+ 
+
+0x40000043 : "soundEmptyQueue0",
+
+ 
+
+0x40000044 : "soundLoop1",
+
+ 
+
+0x40000045 : "soundSetPan1",
+
+ 
+
+0x40000046 : "soundPlay1",
+
+ 
+
+0x40000047 : "soundPlay2",
+
+ 
+
+0x40000048 : "soundPlay3",
+
+ 
+
+0x40000049 : "soundPlay4",
+
+ 
+
+0x4000004A : "soundPlay5",
+
+ 
+
+0x4000004B : "soundQueue1",
+
+ 
+
+0x4000004C : "soundQueue2",
+
+ 
+
+0x4000004D : "soundQueue3",
+
+ 
+
+0x4000004E : "soundQueue4",
+
+ 
+
+0x4000004F : "soundQueue5",
+
+ 
+
+0x40000050 : "soundSetDefltVocPitch1",
+
+ 
+
+0x40000051 : "soundSetPitch1",
+
+ 
+
+0x40000052 : "soundSetVolume1",
+
+ 
+
+0x40000053 : "soundStop0",
+
+ 
+
+0x40000054 : "startListening0",
+
+ 
+
+0x40000055 : "startBlockLoop1",
+
+ 
+
+0x40000056 : "startBlockCallback2",
+
+ 
+
+0x40000057 : "startBlockChance1",
+
+ 
+
+0x40000058 : "startBlockDialogSynch0",
+
+ 
+
+0x40000059 : "startBlockElse0",
+
+ 
+
+0x4000005A : "startBlockListen0",
+
+ 
+
+0x4000005B : "stopFudging1",
+
+ 
+
+0x4000005C : "suspendFudging1",
+
+ 
+
+0x4000005D : "suspendLayerRotation1",
+
+ 
+
+0x4000005E : "tailSetNeutral1",
+
+ 
+
+0x4000005F : "tailSetRestoreNeutral1",
+
+ 
+
+0x40000060 : "tailSetWag1",
+
+ 
+
+0x40000061 : "targetSprite4",
+
+ 
+
+0x40000062 : "throwMe0",
+
+ 
+
+0x40000063 : "endPos",
+}
