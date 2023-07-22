@@ -1,0 +1,199 @@
+[gd_scene load_steps=7 format=3 uid="uid://ctiys3gvvvgbs"]
+
+[ext_resource type="PackedScene" uid="uid://bf4rw2b3demd1" path="res://pet/pet.tscn" id="1_scfsw"]
+[ext_resource type="Script" path="res://behaviour/animviewer.gd" id="2_vr1xd"]
+[ext_resource type="Script" path="res://scenes/animviewer/AnimViewerController.gd" id="3_vbln5"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_76p03"]
+font_size = 25
+
+[sub_resource type="LabelSettings" id="LabelSettings_x5igw"]
+font_size = 24
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_al0ay"]
+
+[node name="Animviewer" type="Node2D"]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Background" type="ColorRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.309804, 0.490196, 0.513726, 1)
+
+[node name="HSplitContainer" type="HSplitContainer" parent="CanvasLayer"]
+clip_contents = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = 500
+
+[node name="VSplitContainer" type="VBoxContainer" parent="CanvasLayer/HSplitContainer"]
+clip_contents = true
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="CanvasLayer/HSplitContainer/VSplitContainer"]
+clip_contents = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Scptitle" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Scp"
+label_settings = SubResource("LabelSettings_76p03")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Scplabel" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Choose scp"
+
+[node name="MenuButton" type="OptionButton" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+item_count = 2
+selected = 0
+popup/item_0/text = "Master"
+popup/item_0/id = 0
+popup/item_1/text = "BWS"
+popup/item_1/id = 1
+
+[node name="scpinfo" type="HBoxContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer" groups=["scpinfo"]]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
+layout_mode = 2
+text = "Start state"
+
+[node name="startstate" type="LineEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
+layout_mode = 2
+text = "130"
+
+[node name="Label2" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
+layout_mode = 2
+text = "Action"
+
+[node name="action" type="LineEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
+layout_mode = 2
+text = "0"
+
+[node name="Label3" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
+layout_mode = 2
+text = "Rotation"
+
+[node name="rotation" type="LineEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
+layout_mode = 2
+text = "0"
+
+[node name="curscpinfo" type="HBoxContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer" groups=["curscpinfo"]]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/curscpinfo"]
+layout_mode = 2
+text = "Current 
+state"
+
+[node name="curstate" type="LineEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/curscpinfo"]
+layout_mode = 2
+text = "130"
+editable = false
+
+[node name="Label2" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/curscpinfo"]
+layout_mode = 2
+text = "Current 
+action"
+
+[node name="curaction" type="LineEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/curscpinfo"]
+layout_mode = 2
+text = "130"
+editable = false
+
+[node name="Label3" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/curscpinfo"]
+layout_mode = 2
+text = "Next 
+state"
+
+[node name="nextstate" type="LineEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/curscpinfo"]
+layout_mode = 2
+text = "130"
+editable = false
+
+[node name="Button" type="Button" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+toggle_mode = true
+text = "Go
+"
+
+[node name="Lnztitle" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Lnz"
+label_settings = SubResource("LabelSettings_x5igw")
+vertical_alignment = 1
+
+[node name="LnzText" type="TextEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer" groups=["petlnz"]]
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Paste your PET lnz here"
+
+[node name="MarginContainer2" type="MarginContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_right = 10
+
+[node name="Panel" type="Panel" parent="CanvasLayer/HSplitContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_al0ay")
+
+[node name="CenterContainer" type="CenterContainer" parent="CanvasLayer/HSplitContainer/Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="pet" parent="CanvasLayer/HSplitContainer/Panel/CenterContainer" instance=ExtResource("1_scfsw")]
+
+[node name="Brain" parent="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet" index="1"]
+start_behaviour = ExtResource("2_vr1xd")
+
+[node name="AnimViewerController" type="Node" parent="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet"]
+script = ExtResource("3_vbln5")
+
+[connection signal="toggled" from="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/Button" to="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet/AnimViewerController" method="_on_button_toggled"]
+
+[editable path="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet"]

@@ -1,14 +1,14 @@
-[gd_scene load_steps=14 format=3 uid="uid://dx6dnx5u4rylc"]
+[gd_scene load_steps=14 format=3]
 
-[ext_resource type="Texture2D" uid="uid://bla8ood7o60iq" path="res://images/wallpapers/Paw Print.bmp" id="1_51ffs"]
-[ext_resource type="Script" path="res://playpen.gd" id="1_66r52"]
-[ext_resource type="Script" path="res://Resizser.gd" id="2_4jn8u"]
-[ext_resource type="PackedScene" uid="uid://bsi6yf5ffnjln" path="res://toys/ball/ball.tscn" id="4_8rvvh"]
-[ext_resource type="PackedScene" uid="uid://cgjn74yc5d4ma" path="res://toys/case/case.tscn" id="5_rglks"]
-[ext_resource type="SpriteFrames" uid="uid://brnnbcn11g7ml" path="res://images/cursors/cursor.tres" id="6_4oxq7"]
-[ext_resource type="PackedScene" uid="uid://bf4rw2b3demd1" path="res://pet/pet.tscn" id="7_76eq7"]
-[ext_resource type="Script" path="res://CursorPos.gd" id="8_2tn54"]
-[ext_resource type="Texture2D" uid="uid://c0442in6d8ly1" path="res://icon.svg" id="9_5555l"]
+[ext_resource type="Script" path="res://scenes/playpen/playpen.gd" id="1_pk1fv"]
+[ext_resource type="Texture2D" uid="uid://bla8ood7o60iq" path="res://images/wallpapers/Paw Print.bmp" id="2_1obs2"]
+[ext_resource type="Script" path="res://scenes/playpen/Resizser.gd" id="3_cyvyr"]
+[ext_resource type="SpriteFrames" uid="uid://brnnbcn11g7ml" path="res://images/cursors/cursor.tres" id="4_rnb4u"]
+[ext_resource type="PackedScene" uid="uid://cgjn74yc5d4ma" path="res://toys/case/case.tscn" id="5_3ubw5"]
+[ext_resource type="PackedScene" uid="uid://bsi6yf5ffnjln" path="res://toys/ball/ball.tscn" id="6_tqark"]
+[ext_resource type="PackedScene" uid="uid://bf4rw2b3demd1" path="res://pet/pet.tscn" id="7_vba06"]
+[ext_resource type="Script" path="res://CursorPos.gd" id="8_at3p8"]
+[ext_resource type="Texture2D" uid="uid://c0442in6d8ly1" path="res://icon.svg" id="9_dgr6v"]
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_hfwbp"]
 b = Vector2(-1152, 0)
@@ -23,7 +23,7 @@ b = Vector2(-700, 0)
 b = Vector2(1400, 0)
 
 [node name="Root" type="Node2D"]
-script = ExtResource("1_66r52")
+script = ExtResource("1_pk1fv")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 layer = -1
@@ -34,7 +34,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("1_51ffs")
+texture = ExtResource("2_1obs2")
 stretch_mode = 1
 
 [node name="Control5" type="Control" parent="CanvasLayer"]
@@ -45,7 +45,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("2_4jn8u")
+script = ExtResource("3_cyvyr")
 
 [node name="top" type="Control" parent="CanvasLayer/Control5"]
 layout_mode = 1
@@ -137,13 +137,13 @@ offset_bottom = 147.0
 [node name="Cursoranims" type="AnimatedSprite2D" parent="CanvasLayer"]
 z_index = -1
 position = Vector2(123, 104)
-sprite_frames = ExtResource("6_4oxq7")
+sprite_frames = ExtResource("4_rnb4u")
 animation = &"pickup"
 
-[node name="case" parent="." instance=ExtResource("5_rglks")]
+[node name="case" parent="." instance=ExtResource("5_3ubw5")]
 position = Vector2(400, 133)
 
-[node name="RigidBody2D" parent="." instance=ExtResource("4_8rvvh")]
+[node name="RigidBody2D" parent="." instance=ExtResource("6_tqark")]
 position = Vector2(167, 201)
 
 [node name="Holder" type="Node2D" parent="."]
@@ -158,16 +158,16 @@ hit_from_inside = true
 collide_with_areas = true
 collide_with_bodies = false
 
-[node name="pet" parent="." instance=ExtResource("7_76eq7")]
+[node name="pet" parent="." instance=ExtResource("7_vba06")]
 position = Vector2(493, 345)
 
 [node name="CursorPos" type="Node2D" parent="." groups=["cursor"]]
-script = ExtResource("8_2tn54")
+script = ExtResource("8_at3p8")
 
 [node name="Icon" type="Sprite2D" parent="CursorPos"]
 visible = false
 scale = Vector2(0.2, 0.2)
-texture = ExtResource("9_5555l")
+texture = ExtResource("9_dgr6v")
 
 [connection signal="resized" from="CanvasLayer/Control5" to="CanvasLayer/Control5" method="_on_resized"]
 

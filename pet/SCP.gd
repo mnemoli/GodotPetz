@@ -7,6 +7,7 @@ var processing = false
 var current_state = scp.get_start_state()
 var script_stack = []
 var last_action = -1
+var next_state = -1
 
 signal action_done
 
@@ -48,6 +49,7 @@ func _process(_delta):
 	if !actionStack.is_empty() and !processing:
 		processing = true
 		var curaction = scp.get_action(actionStack.front())
+		next_state = curaction.endState
 		get_parent().loop = last_action == curaction.id
 		script_stack = curaction.scripts[0].duplicate()
 		while !script_stack.is_empty():
@@ -105,10 +107,17 @@ func _process(_delta):
 								script_stack.pop_front()
 		processing = false
 		last_action = actionStack.pop_front()
-		current_state = scp.get_action(last_action).endState
+		current_state = next_state
 		get_parent().update_pos()
 		if actionStack.is_empty():
 			emit_signal("action_done")
+
+func reset():
+	actionStack = []
+	processing = false
+	current_state = 130
+	last_action = -1
+	next_state = 130
 
 var scpVerbs = {
 	0x40000000 : "startPos",
