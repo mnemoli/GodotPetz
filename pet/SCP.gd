@@ -1,5 +1,6 @@
 extends Node
 
+@onready var pet = get_parent()
 var scp: PetzScpResource = preload("res://animations/CAT.scp")
 var graph: Dictionary
 var actionStack = []
@@ -53,6 +54,19 @@ func _process(_delta):
 		while !script_stack.is_empty():
 			var currentelem = script_stack.pop_front()
 			match currentelem: # seq2
+				0x4000001B: #lookAtSprite1
+					pet.head_target_type = pet.HEAD_TARGET_TYPE.TARGET
+					script_stack.pop_front()
+				0x4000001C: #lookAtSpriteEyes1
+					pet.eye_target_type = pet.EYE_TARGET_TYPE.TARGET
+					script_stack.pop_front()
+				0x4000001D: #lookAtUser0
+					pet.head_target_type = pet.HEAD_TARGET_TYPE.USER
+					pet.eye_target_type = pet.EYE_TARGET_TYPE.USER
+				0x4000001F: #lookForward0
+					pet.head_target_type = pet.HEAD_TARGET_TYPE.FORWARD
+				0x4000001F: #lookForwardEyes0
+					pet.eyes_target_type = pet.EYES_TARGET_TYPE.FORWARD
 				0x40000033:
 					var minframe = script_stack.pop_front()
 					var maxframe = script_stack.pop_front()
@@ -71,9 +85,9 @@ func _process(_delta):
 						var rand1 = script_stack.pop_front()
 						var rand2 = script_stack.pop_front()
 						times = randi_range(rand1, rand2)
-					var newelems = scp.get_action(actionid).scripts[0] as Array
-					newelems.push_back(0x40000014)
+					var newelems = scp.get_action(actionid).scripts[0].duplicate()
 					var cop = newelems.duplicate()
+					newelems.push_back(0x40000014)
 					for i in range(0, times):
 						newelems.append_array(cop)
 					newelems.append_array(script_stack)
@@ -84,6 +98,16 @@ func _process(_delta):
 					script_stack.pop_front()
 				0x40000014: #gluescriptsball1
 					get_parent().update_pos()
+				0x40000057: #startBlockChance1
+					var chance = script_stack.pop_front()
+					if chance == 0x4000002F:
+						chance = randi_range(script_stack.pop_front(), script_stack.pop_front())
+					var random = randi_range(0, 100)
+					if random > chance: # we don't run to run the block
+						var elem
+						while elem != 0x40000011:
+							elem = script_stack.pop_front()
+					# otherwise just continue processing
 				_: 
 					if currentelem < 0x40000000: #frame number
 						if currentelem < 0 or currentelem > 16040:

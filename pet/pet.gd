@@ -1,8 +1,22 @@
 extends Node2D
 
-var texture = preload("res://ball_shader.tres")
-var eye_texture = preload("res://eye_shader.tres")
-var line_texture = preload("res://line_shader.tres")
+enum HEAD_TARGET_TYPE {
+	TARGET,
+	RANDOM,
+	USER,
+	FORWARD
+}
+
+enum EYE_TARGET_TYPE {
+	TARGET,
+	RANDOM,
+	USER,
+	FORWARD
+}
+
+var texture = preload("res://shaders/ball_shader.tres")
+var eye_texture = preload("res://shaders/eye_shader.tres")
+var line_texture = preload("res://shaders/line_shader.tres")
 var hair6 = preload("res://images/textures/hair6.bmp")
 @export var tex: Texture2D
 @export var draw_scale = 0.5
@@ -25,6 +39,8 @@ var delta = 0
 var last_head_rot = Vector2.ZERO
 var lnz: LnzParser
 var process_speed_tick = 0
+var head_target_type = HEAD_TARGET_TYPE.USER
+var eye_target_type = EYE_TARGET_TYPE.USER
 
 signal animation_done
 
@@ -58,18 +74,18 @@ func calculate_rectangle(start: Vector2, end: Vector2, start_width, end_width, c
 	if convert_to_int:
 		start_width = round(start_width)
 		end_width = round(end_width)
-	pts.append(Vector2(length, start_width))
-	pts.append(Vector2(-length, end_width))
-	pts.append(Vector2(-length, -end_width))
-	pts.append(Vector2(length, -start_width))
+	pts.append(Vector2(length, start_width * 2.0))
+	pts.append(Vector2(-length, end_width * 2.0))
+	pts.append(Vector2(-length, -end_width * 2.0))
+	pts.append(Vector2(length, -start_width * 2.0))
 	
 	var uvs = PackedVector2Array()
 	uvs.append(Vector2(length, 0))
 	uvs.append(Vector2(0, 0))
-	uvs.append(Vector2(0, end_width * 2.0))
-	uvs.append(Vector2(length, start_width * 2.0))
+	uvs.append(Vector2(0, end_width * 4.0))
+	uvs.append(Vector2(length, start_width * 4.0))
 	
-	var raws = Vector2(start_width, end_width)
+	var raws = Vector2(start_width * 4.0, end_width * 4.0)
 	
 	return [pts, uvs, raws]
 
@@ -81,7 +97,7 @@ func calculate_addball_position(ball_no, base_pos, base_rot):
 	vec = vec.rotated(Vector3.UP, deg_to_rad(ball_rotation))
 	vec *= q
 	vec = vec.rotated(Vector3.LEFT, deg_to_rad(15))
-	return base_pos.pos + vec
+	return base_pos + vec
 
 func _ready():
 	var frame_balls = ContentLoader.animations.get_frame(0).ball_array as Array
@@ -106,7 +122,7 @@ func _ready():
 			var ball_sizes = ContentLoader.animations.get_ball_sizes() + lnz.addballs.values().map(func(a): return a.size)
 			var radius = (ball_sizes[i] / 2.0) * ball_scale
 			radius = max(radius, 3.0)
-			circle.polygon = _calculate_polygon(radius)
+			radius -= 1
 			if i in eye_balls:
 				circle.material = eye_texture.duplicate()
 				var irisno = eye_balls.find(i)
@@ -126,10 +142,14 @@ func _ready():
 			circle.material.set_shader_parameter("tex", tex)
 			if i < frame_balls.size() - 1:
 				circle.material.set_shader_parameter("outline_width", lnz.balls[i].outline as float)
-				circle.material.set_shader_parameter("color", Color.from_string(lnz.colors[lnz.balls[i].color_index], Color.WHITE))
-			elif i > frame_balls.size() - 1:
+				circle.material.set_shader_parameter("color_index", lnz.balls[i].color_index as float)
+				circle.material.set_shader_parameter("outline_color", lnz.colors[lnz.balls[i].outline_color_index])
+				circle.material.set_shader_parameter("fuzz", lnz.balls[i].fuzz as float)
+			else:
 				circle.material.set_shader_parameter("outline_width", lnz.addballs[i].outline as float)
-				circle.material.set_shader_parameter("color", Color.from_string(lnz.colors[lnz.addballs[i].color_index], Color.WHITE))
+				circle.material.set_shader_parameter("color_index", lnz.addballs[i].color_index as float)
+				circle.material.set_shader_parameter("outline_color", lnz.colors[lnz.addballs[i].outline_color_index])
+				circle.material.set_shader_parameter("fuzz", lnz.addballs[i].fuzz as float)
 	
 	# don't ask, moronic godot behaviour
 	var test_texture = GradientTexture2D.new()
@@ -141,22 +161,39 @@ func _ready():
 			continue
 		var line = Polygon2D.new()
 		add_child(line)
-		var startname = lnz.cat_ball_names[l.start]
-		var endname = lnz.cat_ball_names[l.end]
-		line.name = "Line " + startname + " " + endname
+		if l.start < 67 and l.end < 67:
+			var startname = lnz.cat_ball_names[l.start]
+			var endname = lnz.cat_ball_names[l.end]
+			line.name = "Line " + startname + " " + endname
+		else:
+			line.name = "Addball line " + str(l.start) + " " + str(l.end)
 		lines.push_back(line)
 		line.material = line_texture.duplicate()
 		line.material.set_shader_parameter("tex", tex)
 		line.texture = test_texture
 		if l.r_color_index == -1:
 			line.material.set_shader_parameter("outline1_enabled", 0.0)
+		else:
+			line.material.set_shader_parameter("outline1_color", lnz.colors[l.r_color_index])
 		if l.l_color_index == -1:
 			line.material.set_shader_parameter("outline2_enabled", 0.0)
+		else:
+			line.material.set_shader_parameter("outline2_color", lnz.colors[l.l_color_index])
+		if l.color_index == -1:
+			var ball_color
+			if l.start < 67:
+				ball_color = lnz.balls[l.start].color_index
+				
+			else:
+				ball_color = lnz.addballs[l.start].color_index
+			line.material.set_shader_parameter("color_index", ball_color)
+		else:
+			line.material.set_shader_parameter("color_index", l.color_index)
 			
 	for w in lnz.whiskers:
 		var line = Polygon2D.new()
 		add_child(line)
-		line.color = Color.BLACK
+		line.color = lnz.colors[lnz.balls[w.end].color_index]
 		whiskers.push_back(line)
 		ball_polys[w.end].visible = false
 
@@ -164,45 +201,82 @@ func sort_by_z(a: Dictionary, b: Dictionary):
 	return a.pos.z < b.pos.z
 	
 func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
-	head_pos *= draw_scale
-	var headfwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
-	var target_location = target_sprite.global_position
-	var targetvec = Vector3(target_location.x, target_location.y, target_location.y) - Vector3(global_position.x, global_position.y, global_position.y)
-	var headfwd2d = Vector2(headfwd.x, headfwd.y)
-	var target2d = Vector2(targetvec.x, targetvec.y)
-	$ForwardLine.points = [Vector2.ZERO, headfwd2d * 50.0]
-	$TargetLine.points = [Vector2.ZERO, target2d]
-	head_pos /= draw_scale
-	var x = (ball_pos - head_pos)
-	var test = Vector2(headfwd.x, headfwd.z).angle_to(Vector2(targetvec.x, targetvec.z))
-	var angle = -test
-	angle = clampf(angle, deg_to_rad(-60.0), deg_to_rad(60))
-	angle = lerp_angle(last_head_rot.x, angle, delta)
-	x = x.rotated(Vector3.UP, angle)
-	var angle2 = Vector2(headfwd.x, headfwd.y).angle_to(Vector2(targetvec.x, targetvec.y))
-	angle2 = angle2
-	angle2 = clampf(angle2, deg_to_rad(-20), deg_to_rad(20))
-	angle2 = lerp_angle(last_head_rot.y, angle2, delta)
-	var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
-	if ball_rotation >= 180 or ball_rotation < 0:
-		rotaxis = -rotaxis
-	x = x.rotated(rotaxis, angle2)
-	last_head_rot = Vector2(angle, angle2)
-	rottext.text = "angle1 " + str(rad_to_deg(angle)) + "\nangle2 " + str(rad_to_deg(angle2)) + "\ndelta " + str(delta) + "\nballrot " + str(ball_rotation)
+	match head_target_type:
+		HEAD_TARGET_TYPE.TARGET:
+			#head_pos *= draw_scale
+			var headfwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			var target_location = target_sprite.global_position
+			var targetvec = Vector3(target_location.x, target_location.y, target_location.y) - Vector3(global_position.x, global_position.y, global_position.y)
+			var headfwd2d = Vector2(headfwd.x, headfwd.y)
+			var target2d = Vector2(targetvec.x, targetvec.y)
+			$ForwardLine.points = [Vector2.ZERO, headfwd2d * 50.0]
+			$TargetLine.points = [Vector2.ZERO, target2d]
+			#head_pos /= draw_scale
+			var x = (ball_pos - head_pos)
+			var test = Vector2(headfwd.x, headfwd.z).angle_to(Vector2(targetvec.x, targetvec.z))
+			var angle = -test
+			angle = clampf(angle, deg_to_rad(-60.0), deg_to_rad(60))
+			angle = lerp_angle(last_head_rot.x, angle, delta)
+			x = x.rotated(Vector3.LEFT, deg_to_rad(-15))
+			x = x.rotated(Vector3.UP, angle)
+			var angle2 = Vector2(headfwd.x, headfwd.y).angle_to(Vector2(targetvec.x, targetvec.y))
+			angle2 = angle2
+			angle2 = clampf(angle2, deg_to_rad(-20), deg_to_rad(20))
+			angle2 = lerp_angle(last_head_rot.y, angle2, delta)
+			var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			if ball_rotation >= 180 or ball_rotation < 0:
+				rotaxis = -rotaxis
+			x = x.rotated(rotaxis, angle2)
+			last_head_rot = Vector2(angle, angle2)
+			rottext.text = "angle1 " + str(rad_to_deg(angle)) + "\nangle2 " + str(rad_to_deg(angle2)) + "\ndelta " + str(delta) + "\nballrot " + str(ball_rotation)
 
-	return x + head_pos
+			return x + head_pos
+		HEAD_TARGET_TYPE.USER:
+			var angle_to_fwd = -ball_rotation + 180.0
+			angle_to_fwd = wrapf(angle_to_fwd, -180, 180)
+			angle_to_fwd = clampf(angle_to_fwd, -100, 100)
+			angle_to_fwd = deg_to_rad(angle_to_fwd)
+			angle_to_fwd = lerp_angle(last_head_rot.x, angle_to_fwd, delta)
+			var other_angle = lerp_angle(last_head_rot.y, 0, delta)
+			var x = ball_pos - head_pos
+			x = x.rotated(Vector3.LEFT, deg_to_rad(-15))
+			x = x.rotated(Vector3.UP, angle_to_fwd)
+			var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			if ball_rotation >= 180 or ball_rotation < 0:
+				rotaxis = -rotaxis
+			x = x.rotated(rotaxis, other_angle)
+			last_head_rot.x = angle_to_fwd
+			last_head_rot.y = other_angle
+			return head_pos + x
+		HEAD_TARGET_TYPE.FORWARD:
+			var angle = lerp_angle(last_head_rot.x, 0, delta)
+			var other_angle = lerp_angle(last_head_rot.y, 0, delta)
+			var x = ball_pos - head_pos
+			x = x.rotated(Vector3.LEFT, deg_to_rad(-15))
+			x = x.rotated(Vector3.UP, angle)
+			var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			if ball_rotation >= 180 or ball_rotation < 0:
+				rotaxis = -rotaxis
+			x = x.rotated(rotaxis, other_angle)
+			last_head_rot.x = angle
+			last_head_rot.y = other_angle
+			return head_pos + x
 
 func apply_iris_tracking(iris_pos: Vector3, eye_pos: Vector3, eye_size: int):
-	eye_pos *= draw_scale
-	var target_location = target_sprite.global_position
-	var targetvec = (target_location - (global_position + Vector2(eye_pos.x, eye_pos.y)))
-	targetvec /= draw_scale
-	targetvec = targetvec.limit_length(eye_size)
-	iris_pos.x += targetvec.x
-	if targetvec.y < (-eye_size / 3.0) * 2.0:
-		targetvec.y = (-eye_size / 3.0) * 2.0
-	iris_pos.y += targetvec.y
-	return iris_pos
+	match eye_target_type:
+		EYE_TARGET_TYPE.TARGET:
+			var target_location = target_sprite.global_position
+			var targetvec = (target_location - (global_position + Vector2(eye_pos.x, eye_pos.y)))
+			targetvec = targetvec.limit_length(eye_size)
+			iris_pos.x += targetvec.x
+			if targetvec.y < (-eye_size / 3.0) * 2.0:
+				targetvec.y = (-eye_size / 3.0) * 2.0
+			iris_pos.y += targetvec.y
+			return iris_pos
+		EYE_TARGET_TYPE.USER:
+			return eye_pos
+		EYE_TARGET_TYPE.FORWARD:
+			return iris_pos
 	
 @warning_ignore("shadowed_variable")
 func _process(delta):
@@ -215,6 +289,48 @@ func _process(delta):
 			current_frame = current_frame % frames_length
 			queue_redraw()
 	process_speed_tick = (process_speed_tick + 1) % 2
+	
+func apply_extensions(new_ball_positions):
+	var legs = lnz.legs_cat
+	var body_ext = lnz.body_ext_cat
+	var face_ext = lnz.face_ext_cat
+	var head_ext = lnz.head_ext_cat
+	var foot_ext = lnz.foot_ext_cat
+	var ear_ext = lnz.ear_ext_cat
+	
+	# head
+	var head_ball_key = head_ext[0]
+	var head_pos = new_ball_positions[head_ball_key].pos
+	var addballs = lnz.addballs_by_base
+	for ball_no in head_ext:
+		var ball = new_ball_positions[ball_no]
+		var vec = ball.pos - head_pos
+		vec = vec * (lnz.head_enlargement.x / 100.0)
+		vec += head_pos
+		new_ball_positions[ball_no].pos = vec
+		new_ball_positions[ball_no].ext_size = lnz.head_enlargement.y
+		new_ball_positions[ball_no].ext_size_scale = lnz.head_enlargement.x / 100.0
+	
+	# feet
+	for foot_group in foot_ext:
+		var foot_pos = new_ball_positions[foot_group[0]].pos
+		for ball_no in foot_group:
+			var ball = new_ball_positions[ball_no]
+			var vec = ball.pos - foot_pos
+			vec *= (lnz.foot_enlargement.x / 100.0)
+			vec += foot_pos
+			new_ball_positions[ball_no].pos = vec
+			new_ball_positions[ball_no].ext_size = lnz.foot_enlargement.y
+			new_ball_positions[ball_no].ext_size_scale = lnz.foot_enlargement.x / 100.0
+	
+	for ear_master in ear_ext:
+		var base_pos = new_ball_positions[ear_master]
+		for e in ear_ext[ear_master]:
+			var ear_ball = new_ball_positions[e]
+			var vec = ear_ball.pos - base_pos.pos
+			vec *= lnz.ear_extension / 100.0
+			vec += base_pos.pos
+			new_ball_positions[e].pos = vec
 
 func _draw():
 	var next_chest_pos
@@ -240,12 +356,18 @@ func _draw():
 			new_ball_positions[i] = {idx = i, pos = rotated}
 			if i == 6:
 				next_chest_pos = rotated
+		
+		apply_extensions(new_ball_positions)
+		
 		for i in lnz.addballs:
 			if i not in omitted_balls:
-				var base_pos = new_ball_positions[lnz.addballs[i].base]
+				var base = new_ball_positions[lnz.addballs[i].base]
+				var base_pos = base.pos
 				var base_rot = frame.ball_array[lnz.addballs[i].base].rotation
 				var ball_position = calculate_addball_position(i, base_pos, base_rot)
-				new_ball_positions[i] = {idx = i, pos = ball_position}
+				var base_ext1 = base.get("ext_size", 0)
+				var base_ext2 = base.get("ext_size_scale", 1)
+				new_ball_positions[i] = {idx = i, pos = ball_position, ext_size = base_ext1, ext_size_scale = base_ext2}
 				
 		for m in lnz.moves:
 			var base = m.base 
@@ -294,10 +416,14 @@ func _draw():
 				var p = ball.pos
 				var pos = Vector2(p.x, p.y)
 				var animballsize = frame.get("sizediffs", Dictionary()).get(ball.idx, 0)
+				var size
 				if ball.idx < ball_sizes.size():
-					var size = (ball_sizes[ball.idx] + animballsize + lnz.balls[ball.idx].size) / 2.0
-					size *= ball_scale;
-					ball_polys[ball.idx].material.set_shader_parameter("radius", float(size))
+					size = (((ball_sizes[ball.idx] + animballsize + lnz.balls[ball.idx].size + ball.get("ext_size", 0)) * ball_scale) * ball.get("ext_size_scale", 1.0)) / 2.0
+				else:
+					size = (((lnz.addballs[ball.idx].size + ball.get("ext_size", 0)) * ball_scale) * ball.get("ext_size_scale", 1.0)) / 2.0
+				size -= 1
+				ball_polys[ball.idx].polygon = _calculate_polygon(size)
+				ball_polys[ball.idx].material.set_shader_parameter("radius", float(size))
 					#ball_polys[ball.idx].visible = false
 				pos *= draw_scale;
 				ball_polys[ball.idx].position = pos
@@ -309,12 +435,14 @@ func _draw():
 					var iris = new_ball_positions_by_id[iris_no]
 					pos = Vector2(iris.pos.x, iris.pos.y) * draw_scale
 					ball_polys[ball.idx].material.set_shader_parameter("iris_center", pos + global_position)
+					var irisanimballsize = frame.get("sizediffs", Dictionary()).get(iris_no, 0)
+					var iris_size = (((ball_sizes[iris_no] + irisanimballsize + lnz.balls[iris_no].size + ball.get("ext_size", 0)) * ball_scale) * ball.get("ext_size_scale", 1.0)) / 2.0
+					ball_polys[ball.idx].material.set_shader_parameter("iris_radius", iris_size - 1)
 				
 				if ball.idx == 2:
 					belly_position = pos + global_position
 			
 				ctr += 1
-				
 		var linectr = 0		
 		for line in lnz.lines:
 			#lines[linectr].visible = false
@@ -334,6 +462,8 @@ func _draw():
 			lines[linectr].material.set_shader_parameter("center", lines[linectr].position + global_position)
 			var angle = end.position.angle_to_point(start.position)
 			(lines[linectr] as Polygon2D).rotation = angle
+			var anglevec = Vector2.from_angle(angle)
+			lines[linectr].material.set_shader_parameter("vec_to_upright", anglevec)
 			#lines[linectr].visible = false
 			linectr += 1
 		
@@ -341,12 +471,12 @@ func _draw():
 		for whisker in lnz.whiskers:
 			var start = ball_polys[whisker.start]
 			var end = ball_polys[whisker.end]
-			var rect = calculate_rectangle(start.position, end.position, 0.5, 0.5, false)
+			var rect = calculate_rectangle(start.position, end.position, 0.25, 0.25, false)
 			whiskers[whisker_ctr].polygon = rect[0]
 			whiskers[whisker_ctr].position = start.position + (end.position - start.position) / 2.0
 			var angle = end.position.angle_to_point(start.position)
 			whiskers[whisker_ctr].rotation = angle
-			var z_sort = min(start.get_index(), end.get_index())
+			var z_sort = max(start.get_index(), end.get_index())
 			move_child(whiskers[whisker_ctr], z_sort)
 			whisker_ctr += 1
 					

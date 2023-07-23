@@ -1,6 +1,6 @@
-[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://dpgg2uy5h8l7p"]
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
 
-[ext_resource type="Shader" path="res://eye_shader.gdshader" id="1_dsk5b"]
+[ext_resource type="Shader" path="res://shaders/eye_shader.gdshader" id="1_dsk5b"]
 
 [resource]
 resource_local_to_scene = true

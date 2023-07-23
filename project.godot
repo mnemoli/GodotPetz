@@ -46,3 +46,10 @@ common/enable_physics_object_picking_top_only=true
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
+
+[shader_globals]
+
+palette={
+"type": "sampler2D",
+"value": "res://images/textures/petzpalette.png"
+}

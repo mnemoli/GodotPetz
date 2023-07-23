@@ -1,6 +1,7 @@
 extends Behaviour
 
 var cursor
+var tick = 0
 
 func advertise(_pet, _object, _with):
 	return 99
@@ -15,6 +16,19 @@ func execute(pet, _object, _with):
 		var vec = ((cursor_pos - pet.belly_position) as Vector2)
 		var vecl = vec.length()
 		var screen_boundaries = get_viewport().get_visible_rect()
+		if tick % 7 == 0:
+			var rand = randi_range(0, 100)
+			if rand < 30:
+				pet.head_target_type = pet.HEAD_TARGET_TYPE.TARGET
+				pet.eye_target_type = pet.EYE_TARGET_TYPE.TARGET
+			elif rand < 60:
+				pet.head_target_type = pet.HEAD_TARGET_TYPE.USER
+				pet.eye_target_type = pet.EYE_TARGET_TYPE.USER
+			else:
+				pet.head_target_type = pet.HEAD_TARGET_TYPE.FORWARD
+				pet.eye_target_type = pet.EYE_TARGET_TYPE.FORWARD
+		tick += 1
+		
 	#pet.target_sprite = cursor
 	#scp.push_action(40)
 		if(vecl > 500):
