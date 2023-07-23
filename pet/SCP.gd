@@ -51,7 +51,7 @@ func _process(_delta):
 		var curaction = scp.get_action(actionStack.front())
 		next_state = curaction.endState
 		get_parent().loop = last_action == curaction.id
-		script_stack = curaction.scripts[0].duplicate()
+		script_stack = (curaction.scripts[0] as Array).duplicate(true)
 		while !script_stack.is_empty():
 			var currentelem = script_stack.pop_front()
 			match currentelem: # seq2
@@ -68,15 +68,15 @@ func _process(_delta):
 				0x40000027: #playaction2
 					var actionid = script_stack.pop_front()
 					var times = script_stack.pop_front()
-					print("playing " + str(actionid) + " " + str(times) + " times")
 					if times == 0x4000002F: #rand2
 						var rand1 = script_stack.pop_front()
 						var rand2 = script_stack.pop_front()
 						times = randi_range(rand1, rand2)
-					var newelems = scp.get_action(actionid).scripts[0] as Array
+					print("playing " + str(actionid) + " " + str(times) + " times")
+					var newelems = (scp.get_action(actionid).scripts[0] as Array).duplicate(true)
+					var cop = newelems.duplicate(true)
 					newelems.push_back(0x40000014)
-					var cop = newelems.duplicate()
-					for i in range(0, times):
+					for i in range(times):
 						newelems.append_array(cop)
 					newelems.append_array(script_stack)
 					script_stack = newelems
@@ -114,6 +114,7 @@ func _process(_delta):
 
 func reset():
 	actionStack = []
+	script_stack = []
 	processing = false
 	current_state = 130
 	last_action = -1
