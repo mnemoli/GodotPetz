@@ -54,8 +54,8 @@ func _process(_delta):
 		script_stack = (curaction.scripts[0] as Array).duplicate(true)
 		while !script_stack.is_empty():
 			var currentelem = script_stack.pop_front()
-			match currentelem: # seq2
-				0x40000033:
+			match currentelem:
+				0x40000033: # seq2
 					var minframe = script_stack.pop_front()
 					var maxframe = script_stack.pop_front()
 					var direction = 1
@@ -86,6 +86,12 @@ func _process(_delta):
 					script_stack.pop_front()
 				0x40000014: #gluescriptsball1
 					get_parent().update_pos()
+				0x4000002A: #layeredaction3
+					var layeredaction = script_stack.pop_front()
+					var unknown = script_stack.pop_front()
+					var layer = script_stack.pop_front()
+					call_deferred("run_layered_action", layer, layeredaction)
+					print("playing layered action " + str(layeredaction) + " on layer " + str(layer))
 				_: 
 					if currentelem < 0x40000000: #frame number
 						if currentelem < 0 or currentelem > 16040:
@@ -119,6 +125,43 @@ func reset():
 	current_state = 130
 	last_action = -1
 	next_state = 130
+	
+func run_layered_action(layer, action):
+	var actionelems = scp.get_action(action).scripts[0].duplicate() as Array
+	while !actionelems.is_empty():
+		var elem = actionelems.pop_front()
+		match elem:
+			0x40000033: # seq2
+				var minframe = actionelems.pop_front()
+				var maxframe = actionelems.pop_front()
+				var direction = 1
+				if maxframe < minframe:
+					print("uh oh backwards anim")
+				var size = abs(maxframe - minframe) + 1
+				get_parent().layers[layer] = {start_frame = minframe, size = size, current = 0}
+				while await get_parent().layered_animation_done != layer:
+					pass
+			_:
+				if elem < 0x40000000: #frame number
+						if elem < 0 or elem > 16040:
+							print("BIG MISTAKE")
+						else:
+							get_parent().layers[layer] = {start_frame = elem, size = 1, current = 0}
+							while await get_parent().layered_animation_done != layer:
+								pass
+				else:
+					var verbname = scpVerbs[elem] as String
+					var argcount = verbname.right(1)
+					if argcount.is_valid_int():
+						argcount = argcount as int
+					else:
+						argcount = 0
+					for n in range(argcount):
+						var top = actionelems.pop_front()
+						if top == 0x4000002F: #rand2
+							actionelems.pop_front()
+							actionelems.pop_front()
+				
 
 var scpVerbs = {
 	0x40000000 : "startPos",

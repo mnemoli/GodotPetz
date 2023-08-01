@@ -26,7 +26,10 @@ var lnz: LnzParser
 var process_speed_tick = 0
 @export var apply_anim_movement = true
 
+var layers = [null, null, null, null, null, null]
+
 signal animation_done
+signal layered_animation_done(layer)
 
 var head_balls = [4,5,7,8,9,10,11,14,15,24,27,28,29,30,31,37,40,55,56,57,58,59,60,61,62]
 var head_ball = 24
@@ -251,7 +254,16 @@ func _process(delta):
 			emit_signal("animation_done")
 		else:
 			current_frame = current_frame % frames_length
-			queue_redraw()
+		queue_redraw()
+		
+		var l = 0
+		for layer in layers:
+			if layer != null:
+				layer.current += 1
+				if layer.current == layer.size:
+					emit_signal("layered_animation_done", l)
+					layers[l] = null
+			l += 1
 	process_speed_tick = (process_speed_tick + 1) % 2
 
 func _draw():
@@ -279,6 +291,22 @@ func _draw():
 			new_ball_positions[i] = {idx = i, pos = rotated}
 			if i == 6:
 				next_chest_pos = rotated
+		
+		var baseframe = ContentLoader.animations.get_frame(0) as Dictionary
+		for layer in layers:
+			if layer != null:
+				var layerframe = ContentLoader.animations.get_frame(layer.start_frame + layer.current) as Dictionary
+				for i in ball_sizes.size():
+					var ball = layerframe.ball_array[i] as Dictionary
+					var base_ball = baseframe.ball_array[i]
+					var ball_position = ball.position - base_ball.position
+					var rotated = ball_position.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+					rotated = rotated.rotated(Vector3.LEFT, deg_to_rad(15))
+					rotated += new_ball_positions[i].pos
+					new_ball_positions[i] = {idx = i, pos = rotated}
+					if i == 6:
+						next_chest_pos = rotated
+		
 		for i in lnz.addballs:
 			if i not in omitted_balls:
 				var base_pos = new_ball_positions[lnz.addballs[i].base]
