@@ -24,6 +24,7 @@ var delta = 0
 var last_head_rot = Vector2.ZERO
 var lnz: LnzParser
 var process_speed_tick = 0
+@export var anim_speed_divider = 2
 @export var apply_anim_movement = true
 
 var layers = [null, null, null, null, null, null]
@@ -264,7 +265,7 @@ func _process(delta):
 					emit_signal("layered_animation_done", l)
 					layers[l] = null
 			l += 1
-	process_speed_tick = (process_speed_tick + 1) % 2
+	process_speed_tick = (process_speed_tick + 1) % anim_speed_divider
 
 func _draw():
 	var next_chest_pos
@@ -292,7 +293,7 @@ func _draw():
 			if i == 6:
 				next_chest_pos = rotated
 		
-		var baseframe = ContentLoader.animations.get_frame(0) as Dictionary
+		var baseframe = frame
 		for layer in layers:
 			if layer != null:
 				var layerframe = ContentLoader.animations.get_frame(layer.start_frame + layer.current) as Dictionary
@@ -426,8 +427,9 @@ func _draw():
 		last_chest_pos = next_chest_pos
 		last_frame = start_frame + current_frame
 
+
+@warning_ignore("shadowed_variable")
 func play_anim(start_frame, length, direction):
-	@warning_ignore("shadowed_variable")
 	self.start_frame = start_frame
 	self.frames_length = length
 	self.current_frame = 0
@@ -448,7 +450,7 @@ func play_anim(start_frame, length, direction):
 		if loop and frames_length > 1:
 			current_frame = 1 * direction
 			loop = false
-	queue_redraw()
+		queue_redraw()
 	
 func update_pos():
 	reset = true
@@ -477,6 +479,7 @@ func reset_pet():
 	turn_delta = 0
 	frames_length = 0
 	loop = false
+	layers = [null, null, null, null, null, null]
 	
 func set_lnz_raw(lnz_text):
 	lnz = LnzParser.fromtext(lnz_text)

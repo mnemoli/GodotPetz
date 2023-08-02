@@ -19,9 +19,11 @@ func _on_button_toggled(button_pressed):
 		bhav.pet_rotation = scpinfo.get_node("rotation").text as int + 180
 		bhav.go = true
 	else:
+		pet.get_node("SCP").reset()
 		bhav.go = false
 
-func _process(delta):
+func _process(_delta):
 	curscpinfo.get_node("curstate").text = str(scp.current_state)
-	curscpinfo.get_node("curaction").text = str(scp.actionStack.front())
+	if !scp.actionStack.is_empty():
+		curscpinfo.get_node("curaction").text = str(scp.actionStack.front())
 	curscpinfo.get_node("nextstate").text = str(scp.next_state)

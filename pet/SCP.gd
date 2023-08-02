@@ -8,10 +8,12 @@ var current_state = scp.get_start_state()
 var script_stack = []
 var last_action = -1
 var next_state = -1
+var layered_stacks = [[], [], [], [], [], []]
 
 signal action_done
 
 func _ready():
+	randomize()
 	for a in scp.get_actions():
 		var ar = graph.get(a.startState, [])
 		ar.push_back({endState = a.endState, actionId = a.id})
@@ -51,20 +53,22 @@ func _process(_delta):
 		var curaction = scp.get_action(actionStack.front())
 		next_state = curaction.endState
 		get_parent().loop = last_action == curaction.id
-		script_stack = (curaction.scripts[0] as Array).duplicate(true)
+		var numscripts = curaction.scripts.size()
+		var randscript = randi_range(0, numscripts - 1)
+		print("CHOOSING SCRIPT " + str(randscript) + " OF " + str(numscripts) + " FOR ACTION " + str(actionStack.front()))
+#		if numscripts > 1:
+#			randscript = 1
+		script_stack = curaction.scripts[randscript].duplicate(true)
 		while !script_stack.is_empty():
+			var last_chance_succeeded = null
 			var currentelem = script_stack.pop_front()
 			match currentelem:
-				0x40000033: # seq2
-					var minframe = script_stack.pop_front()
-					var maxframe = script_stack.pop_front()
-					var direction = 1
-					if maxframe < minframe:
-						print("uh oh backwards anim")
-						direction = -1
-					#print("requesting anim from " + str(minframe))
-					get_parent().play_anim(minframe, abs(maxframe - minframe) + 1, direction)
-					await get_parent().animation_done
+				0x4000000F: #enablefudgeaim1
+					script_stack.pop_front()
+				0x40000009: #cuecode1
+					script_stack.pop_front()
+				0x40000014: #gluescriptsball1
+					get_parent().update_pos()
 				0x40000027: #playaction2
 					var actionid = script_stack.pop_front()
 					var times = script_stack.pop_front()
@@ -72,7 +76,7 @@ func _process(_delta):
 						var rand1 = script_stack.pop_front()
 						var rand2 = script_stack.pop_front()
 						times = randi_range(rand1, rand2)
-					print("playing " + str(actionid) + " " + str(times) + " times")
+					print("playing " + str(actionid) + " " + str(times) + " times from action " + str(actionStack.front()))
 					var newelems = (scp.get_action(actionid).scripts[0] as Array).duplicate(true)
 					var cop = newelems.duplicate(true)
 					newelems.push_back(0x40000014)
@@ -80,18 +84,83 @@ func _process(_delta):
 						newelems.append_array(cop)
 					newelems.append_array(script_stack)
 					script_stack = newelems
-				0x4000000F: #enablefudgeaim1
-					script_stack.pop_front()
-				0x40000009: #cuecode1
-					script_stack.pop_front()
-				0x40000014: #gluescriptsball1
-					get_parent().update_pos()
 				0x4000002A: #layeredaction3
 					var layeredaction = script_stack.pop_front()
 					var unknown = script_stack.pop_front()
 					var layer = script_stack.pop_front()
 					call_deferred("run_layered_action", layer, layeredaction)
 					print("playing layered action " + str(layeredaction) + " on layer " + str(layer))
+				0x4000002C: #playlayeredactioncallback5
+				#callback6 not used in cat scp
+					var chancetype = script_stack.pop_front()
+					var action1 = script_stack.pop_front()
+					var action2 = script_stack.pop_front()
+					var unknown = script_stack.pop_front()
+					if unknown == 0x4000002F:
+						var rand1 = script_stack.pop_front()
+						var rand2 = script_stack.pop_front()
+						unknown = randi_range(rand1, rand2) - 1
+					var layer = script_stack.pop_front()
+					call_deferred("run_layered_action", layer, action1)
+					print("playing layered action " + str(action1) + " on layer " + str(layer))
+				0x40000033: # seq2
+				# 33 and 34 not used in cat scp
+					var minframe = script_stack.pop_front()
+					var maxframe = script_stack.pop_front()
+					var direction = 1
+					if maxframe < minframe:
+						print("uh oh backwards anim")
+						direction = -1
+					print("requesting anim from " + str(minframe) + " to " + str(maxframe))
+					get_parent().play_anim(minframe, abs(maxframe - minframe) + 1, direction)
+					await get_parent().animation_done
+				0x40000055: #startBlockLoop1
+					var times = script_stack.pop_front()
+					if times == 0x4000002F:
+						var rand1 = script_stack.pop_front()
+						var rand2 = script_stack.pop_front()
+						times = randi_range(rand1, rand2) - 1
+					var loopelems = []
+					while script_stack.front() != 0x40000011:
+						loopelems.push_back(script_stack.pop_front())
+					script_stack.pop_front()
+					var cp = loopelems.duplicate()
+					if times >= 0:
+						for i in times:
+							loopelems += cp
+					script_stack = loopelems + script_stack
+				0x40000056: #startBlockCallback2
+					var chance1 = []
+					var next = 0
+					script_stack.pop_front()
+					script_stack.pop_front()
+					while next != 0x40000011:
+						next = script_stack.pop_front()
+						chance1.push_back(next)
+					last_chance_succeeded = true
+					script_stack = chance1 + script_stack
+				0x40000057: #startBlockChance1
+					var chance = script_stack.pop_front()
+					var chancelems = []
+					var next = 0
+					while next != 0x40000011:
+						next = script_stack.pop_front()
+						chancelems.push_back(next)
+					var rand = randi_range(0, 100)
+					if rand < chance:
+						script_stack = chancelems + script_stack
+						last_chance_succeeded = true
+					else:
+						last_chance_succeeded = false
+				0x40000059: #startBlockElse0
+					if last_chance_succeeded == false:
+						var chancelems = []
+						var next = 0
+						while next != 0x40000011:
+							next = script_stack.pop_front()
+							chancelems.push_back(next)
+						script_stack = chancelems + script_stack
+					last_chance_succeeded = null
 				_: 
 					if currentelem < 0x40000000: #frame number
 						if currentelem < 0 or currentelem > 16040:
@@ -121,19 +190,20 @@ func _process(_delta):
 func reset():
 	actionStack = []
 	script_stack = []
+	layered_stacks = [[], [], [], [], [], []]
 	processing = false
 	current_state = 130
 	last_action = -1
 	next_state = 130
 	
 func run_layered_action(layer, action):
-	var actionelems = scp.get_action(action).scripts[0].duplicate() as Array
-	while !actionelems.is_empty():
-		var elem = actionelems.pop_front()
+	layered_stacks[layer] = scp.get_action(action).scripts[0].duplicate() as Array
+	while !layered_stacks[layer].is_empty():
+		var elem = layered_stacks[layer].pop_front()
 		match elem:
 			0x40000033: # seq2
-				var minframe = actionelems.pop_front()
-				var maxframe = actionelems.pop_front()
+				var minframe = layered_stacks[layer].pop_front()
+				var maxframe = layered_stacks[layer].pop_front()
 				var direction = 1
 				if maxframe < minframe:
 					print("uh oh backwards anim")
@@ -157,10 +227,10 @@ func run_layered_action(layer, action):
 					else:
 						argcount = 0
 					for n in range(argcount):
-						var top = actionelems.pop_front()
+						var top = layered_stacks[layer].pop_front()
 						if top == 0x4000002F: #rand2
-							actionelems.pop_front()
-							actionelems.pop_front()
+							layered_stacks[layer].pop_front()
+							layered_stacks[layer].pop_front()
 				
 
 var scpVerbs = {
