@@ -2,6 +2,14 @@ extends Node
 
 @onready var pet = get_parent()
 var scp: PetzScpResource = preload("res://animations/CAT.scp")
+var breed_overrides = {}
+var breed_scp: PetzScpResource = null:
+	set(value):
+		breed_scp = value
+		if value == null:
+			update_graph(scp)
+		else:
+			update_graph(value)
 var graph: Dictionary
 var actionStack = []
 var processing = false
@@ -9,22 +17,34 @@ var current_state = scp.get_start_state()
 var script_stack = []
 var last_action = -1
 var next_state = -1
+var current_script_no = 0
 var layered_stacks = [[], [], [], [], [], []]
 
 signal action_done
 
 func _ready():
 	randomize()
-	for a in scp.get_actions():
+	update_graph(scp)
+		
+func update_graph(this_scp):
+	var actions = this_scp.get_actions()
+	for k in actions:
+		var a = actions[k]
 		var ar = graph.get(a.startState, [])
 		ar.push_back({endState = a.endState, actionId = a.id})
 		graph[a.startState] = ar
 
 func push_action(goal_action):
 	actionStack = find_path(current_state, goal_action)
+	
+func get_action_or_override(action_id):
+	if breed_scp != null and breed_scp.has_action(action_id):
+		return breed_scp.get_action(action_id)
+	else:
+		return scp.get_action(action_id)
 
 func find_path(start_state, goal_action):
-	var desired_state = scp.get_action(goal_action).startState
+	var desired_state = get_action_or_override(goal_action).startState
 	if start_state == desired_state:
 		return [goal_action]
 	var explored = Dictionary()
@@ -51,15 +71,13 @@ func find_path(start_state, goal_action):
 func _process(_delta):
 	if !actionStack.is_empty() and !processing:
 		processing = true
-		var curaction = scp.get_action(actionStack.front())
+		var curaction = get_action_or_override(actionStack.front())
 		next_state = curaction.endState
 		pet.loop = last_action == curaction.id
 		var numscripts = curaction.scripts.size()
 		var randscript = randi_range(0, numscripts - 1)
-		print("CHOOSING SCRIPT " + str(randscript) + " OF " + str(numscripts) + " FOR ACTION " + str(actionStack.front()))
-#		if numscripts > 1:
-#			randscript = 1
 		script_stack = curaction.scripts[randscript].duplicate(true)
+		current_script_no = randscript
 		while !script_stack.is_empty():
 			var last_chance_succeeded = null
 			var currentelem = script_stack.pop_front()
@@ -107,7 +125,7 @@ func _process(_delta):
 						var rand2 = script_stack.pop_front()
 						times = randi_range(rand1, rand2)
 					print("playing " + str(actionid) + " " + str(times) + " times from action " + str(actionStack.front()))
-					var newelems = (scp.get_action(actionid).scripts[0] as Array).duplicate(true)
+					var newelems = (get_action_or_override(actionid).scripts[0] as Array).duplicate(true)
 					var cop = newelems.duplicate(true)
 					newelems.push_back(0x40000014)
 					for i in range(times):
@@ -216,6 +234,8 @@ func _process(_delta):
 		pet.update_pos()
 		if actionStack.is_empty():
 			emit_signal("action_done")
+	elif actionStack.is_empty() and !processing:
+		emit_signal("action_done")
 
 func reset():
 	actionStack = []
@@ -227,7 +247,7 @@ func reset():
 	next_state = 130
 	
 func run_layered_action(layer, action):
-	layered_stacks[layer] = scp.get_action(action).scripts[0].duplicate() as Array
+	layered_stacks[layer] = get_action_or_override(action).scripts[0].duplicate() as Array
 	while !layered_stacks[layer].is_empty():
 		var elem = layered_stacks[layer].pop_front()
 		match elem:
