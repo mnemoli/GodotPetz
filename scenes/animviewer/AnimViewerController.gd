@@ -3,6 +3,7 @@ extends Node
 @onready var pet = get_parent()
 @onready var scpinfo = get_tree().get_first_node_in_group("scpinfo")
 @onready var curscpinfo = get_tree().get_first_node_in_group("curscpinfo")
+@onready var lookatinfo = get_tree().get_first_node_in_group("lookatinfo")
 @onready var lnz = get_tree().get_first_node_in_group("petlnz")
 @onready var scp = pet.get_node("SCP")
 
@@ -27,3 +28,4 @@ func _process(_delta):
 	if !scp.actionStack.is_empty():
 		curscpinfo.get_node("curaction").text = str(scp.actionStack.front())
 	curscpinfo.get_node("nextstate").text = str(scp.next_state)
+	lookatinfo.get_node("TextEdit").text = str(pet.HEAD_TARGET_TYPE.keys()[pet.head_target_type]) + " " + str(pet.EYE_TARGET_TYPE.keys()[pet.eye_target_type])

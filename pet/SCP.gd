@@ -1,5 +1,6 @@
 extends Node
 
+@onready var pet = get_parent()
 var scp: PetzScpResource = preload("res://animations/CAT.scp")
 var graph: Dictionary
 var actionStack = []
@@ -52,7 +53,7 @@ func _process(_delta):
 		processing = true
 		var curaction = scp.get_action(actionStack.front())
 		next_state = curaction.endState
-		get_parent().loop = last_action == curaction.id
+		pet.loop = last_action == curaction.id
 		var numscripts = curaction.scripts.size()
 		var randscript = randi_range(0, numscripts - 1)
 		print("CHOOSING SCRIPT " + str(randscript) + " OF " + str(numscripts) + " FOR ACTION " + str(actionStack.front()))
@@ -68,7 +69,36 @@ func _process(_delta):
 				0x40000009: #cuecode1
 					script_stack.pop_front()
 				0x40000014: #gluescriptsball1
-					get_parent().update_pos()
+					script_stack.pop_front()
+					pet.update_pos()
+				0x40000019: #lookatRandomPt0
+					pet.head_target_type = pet.HEAD_TARGET_TYPE.TARGET
+					print("Looking at random point head")
+					pet.target_look_location = pet.global_position + Vector2(randi_range(-100, 100), randi_range(-100, 100))
+				0x4000001A: #lookatRandomPtEyes0
+					pet.eye_target_type = pet.EYE_TARGET_TYPE.TARGET
+					print("Looking at random point eyes")
+					pet.target_look_location = pet.global_position + Vector2(randi_range(-100, 100), randi_range(-100, 100))
+				0x4000001B: #lookAtSprite1
+					pet.head_target_type = pet.HEAD_TARGET_TYPE.TARGET
+					script_stack.pop_front()
+					pet.target_look_location = pet.global_position + Vector2(0, 100)
+					print("Looking at sprite head")
+				0x4000001C: #lookAtSpriteEyes1
+					pet.eye_target_type = pet.EYE_TARGET_TYPE.TARGET
+					pet.target_look_location = pet.global_position + Vector2(0, 100)
+					script_stack.pop_front()
+					print("Looking at sprite eyes")
+				0x4000001D: #lookAtUser0
+					pet.head_target_type = pet.HEAD_TARGET_TYPE.USER
+					pet.eye_target_type = pet.EYE_TARGET_TYPE.USER
+					print("Looking at user")
+				0x4000001F: #lookForward0
+					pet.head_target_type = pet.HEAD_TARGET_TYPE.FORWARD
+					print("Looking forward head")
+				0x4000001F: #lookForwardEyes0
+					pet.eyes_target_type = pet.EYES_TARGET_TYPE.FORWARD
+					print("Looking forward eyes")
 				0x40000027: #playaction2
 					var actionid = script_stack.pop_front()
 					var times = script_stack.pop_front()
@@ -112,8 +142,8 @@ func _process(_delta):
 						print("uh oh backwards anim")
 						direction = -1
 					print("requesting anim from " + str(minframe) + " to " + str(maxframe))
-					get_parent().play_anim(minframe, abs(maxframe - minframe) + 1, direction)
-					await get_parent().animation_done
+					pet.play_anim(minframe, abs(maxframe - minframe) + 1, direction)
+					await pet.animation_done
 				0x40000055: #startBlockLoop1
 					var times = script_stack.pop_front()
 					if times == 0x4000002F:
@@ -166,8 +196,8 @@ func _process(_delta):
 						if currentelem < 0 or currentelem > 16040:
 							print("BIG MISTAKE")
 						else:
-							get_parent().play_anim(currentelem, 1, 1)
-							await get_parent().animation_done
+							pet.play_anim(currentelem, 1, 1)
+							await pet.animation_done
 					else:
 						var verbname = scpVerbs[currentelem] as String
 						var argcount = verbname.right(1)
@@ -183,7 +213,7 @@ func _process(_delta):
 		processing = false
 		last_action = actionStack.pop_front()
 		current_state = next_state
-		get_parent().update_pos()
+		pet.update_pos()
 		if actionStack.is_empty():
 			emit_signal("action_done")
 
@@ -208,16 +238,16 @@ func run_layered_action(layer, action):
 				if maxframe < minframe:
 					print("uh oh backwards anim")
 				var size = abs(maxframe - minframe) + 1
-				get_parent().layers[layer] = {start_frame = minframe, size = size, current = 0}
-				while await get_parent().layered_animation_done != layer:
+				pet.layers[layer] = {start_frame = minframe, size = size, current = 0}
+				while await pet.layered_animation_done != layer:
 					pass
 			_:
 				if elem < 0x40000000: #frame number
 						if elem < 0 or elem > 16040:
 							print("BIG MISTAKE")
 						else:
-							get_parent().layers[layer] = {start_frame = elem, size = 1, current = 0}
-							while await get_parent().layered_animation_done != layer:
+							pet.layers[layer] = {start_frame = elem, size = 1, current = 0}
+							while await pet.layered_animation_done != layer:
 								pass
 				else:
 					var verbname = scpVerbs[elem] as String

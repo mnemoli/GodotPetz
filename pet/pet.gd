@@ -1,5 +1,19 @@
 extends Node2D
 
+enum HEAD_TARGET_TYPE {
+	TARGET,
+	RANDOM,
+	USER,
+	FORWARD
+}
+
+enum EYE_TARGET_TYPE {
+	TARGET,
+	RANDOM,
+	USER,
+	FORWARD
+}
+
 var texture = preload("res://shaders/ball_shader.tres")
 var eye_texture = preload("res://shaders/eye_shader.tres")
 var line_texture = preload("res://shaders/line_shader.tres")
@@ -26,6 +40,9 @@ var lnz: LnzParser
 var process_speed_tick = 0
 @export var anim_speed_divider = 2
 @export var apply_anim_movement = true
+var head_target_type = HEAD_TARGET_TYPE.FORWARD
+var eye_target_type = EYE_TARGET_TYPE.FORWARD
+var target_look_location: Vector2
 
 var layers = [null, null, null, null, null, null]
 
@@ -105,6 +122,11 @@ func setup_lnz():
 	lines = []
 	whiskers = []
 	
+	# don't ask, moronic godot behaviour
+	var test_texture = GradientTexture2D.new()
+	test_texture.height = 1
+	test_texture.width = 1
+	
 	for i in frame_balls.size() + lnz.addballs.size():
 		if i not in iris_balls and i not in omitted_balls:
 			var circle = Polygon2D.new()
@@ -147,11 +169,6 @@ func setup_lnz():
 				circle.material.set_shader_parameter("color_index", lnz.addballs[i].color_index as float)
 				circle.material.set_shader_parameter("outline_color", lnz.colors[lnz.addballs[i].outline_color_index])
 				circle.material.set_shader_parameter("fuzz", lnz.addballs[i].fuzz as float)
-	
-	# don't ask, moronic godot behaviour
-	var test_texture = GradientTexture2D.new()
-	test_texture.height = 1
-	test_texture.width = 1
 			
 	for l in lnz.lines:
 		if l.start in omitted_balls or l.end in omitted_balls:
@@ -206,45 +223,83 @@ func sort_by_z(a: Dictionary, b: Dictionary):
 	return a.pos.z < b.pos.z
 	
 func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
-	head_pos *= draw_scale
-	var headfwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
-	var target_location = target_sprite.global_position
-	var targetvec = Vector3(target_location.x, target_location.y, target_location.y) - Vector3(global_position.x, global_position.y, global_position.y)
-	var headfwd2d = Vector2(headfwd.x, headfwd.y)
-	var target2d = Vector2(targetvec.x, targetvec.y)
-	$ForwardLine.points = [Vector2.ZERO, headfwd2d * 50.0]
-	$TargetLine.points = [Vector2.ZERO, target2d]
-	head_pos /= draw_scale
-	var x = (ball_pos - head_pos)
-	var test = Vector2(headfwd.x, headfwd.z).angle_to(Vector2(targetvec.x, targetvec.z))
-	var angle = -test
-	angle = clampf(angle, deg_to_rad(-60.0), deg_to_rad(60))
-	angle = lerp_angle(last_head_rot.x, angle, delta)
-	x = x.rotated(Vector3.UP, angle)
-	var angle2 = Vector2(headfwd.x, headfwd.y).angle_to(Vector2(targetvec.x, targetvec.y))
-	angle2 = angle2
-	angle2 = clampf(angle2, deg_to_rad(-20), deg_to_rad(20))
-	angle2 = lerp_angle(last_head_rot.y, angle2, delta)
-	var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
-	if ball_rotation >= 180 or ball_rotation < 0:
-		rotaxis = -rotaxis
-	x = x.rotated(rotaxis, angle2)
-	last_head_rot = Vector2(angle, angle2)
-	#rottext.text = "angle1 " + str(rad_to_deg(angle)) + "\nangle2 " + str(rad_to_deg(angle2)) + "\ndelta " + str(delta) + "\nballrot " + str(ball_rotation)
+	$Icon.visible = false
+	match head_target_type:
+		HEAD_TARGET_TYPE.TARGET:
+			$Icon.visible = true
+			$Icon.global_position = target_look_location
+			#head_pos *= draw_scale
+			var headfwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			var targetvec = Vector3(target_look_location.x, target_look_location.y, target_look_location.y) - Vector3(global_position.x, global_position.y, global_position.y)
+			var headfwd2d = Vector2(headfwd.x, headfwd.y)
+			var target2d = Vector2(targetvec.x, targetvec.y)
+			$ForwardLine.points = [Vector2.ZERO, headfwd2d * 50.0]
+			$TargetLine.points = [Vector2.ZERO, target2d]
+			#head_pos /= draw_scale
+			var x = (ball_pos - head_pos)
+			var test = Vector2(headfwd.x, headfwd.z).angle_to(Vector2(targetvec.x, targetvec.z))
+			var angle = -test
+			angle = clampf(angle, deg_to_rad(-60.0), deg_to_rad(60))
+			angle = lerp_angle(last_head_rot.x, angle, delta)
+			x = x.rotated(Vector3.LEFT, deg_to_rad(-15))
+			x = x.rotated(Vector3.UP, angle)
+			var angle2 = Vector2(headfwd.x, headfwd.y).angle_to(Vector2(targetvec.x, targetvec.y))
+			angle2 = angle2
+			angle2 = clampf(angle2, deg_to_rad(-60), deg_to_rad(60))
+			angle2 = lerp_angle(last_head_rot.y, angle2, delta)
+			var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			if ball_rotation >= 180 or ball_rotation < 0:
+				rotaxis = -rotaxis
+			x = x.rotated(rotaxis, angle2)
+			last_head_rot = Vector2(angle, angle2)
 
-	return x + head_pos
+			return x + head_pos
+		HEAD_TARGET_TYPE.USER:
+			var angle_to_fwd = -ball_rotation + 180.0
+			angle_to_fwd = wrapf(angle_to_fwd, -180, 180)
+			angle_to_fwd = clampf(angle_to_fwd, -100, 100)
+			angle_to_fwd = deg_to_rad(angle_to_fwd)
+			angle_to_fwd = lerp_angle(last_head_rot.x, angle_to_fwd, delta)
+			var other_angle = lerp_angle(last_head_rot.y, 0, delta)
+			var x = ball_pos - head_pos
+			x = x.rotated(Vector3.LEFT, deg_to_rad(-15))
+			x = x.rotated(Vector3.UP, angle_to_fwd)
+			var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			if ball_rotation >= 180 or ball_rotation < 0:
+				rotaxis = -rotaxis
+			x = x.rotated(rotaxis, other_angle)
+			last_head_rot.x = angle_to_fwd
+			last_head_rot.y = other_angle
+			return head_pos + x
+		HEAD_TARGET_TYPE.FORWARD:
+			var angle = lerp_angle(last_head_rot.x, 0, delta)
+			var other_angle = lerp_angle(last_head_rot.y, 0, delta)
+			var x = ball_pos - head_pos
+			x = x.rotated(Vector3.LEFT, deg_to_rad(-15))
+			x = x.rotated(Vector3.UP, angle)
+			var rotaxis = Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			if ball_rotation >= 180 or ball_rotation < 0:
+				rotaxis = -rotaxis
+			x = x.rotated(rotaxis, other_angle)
+			last_head_rot.x = angle
+			last_head_rot.y = other_angle
+			return head_pos + x
 
 func apply_iris_tracking(iris_pos: Vector3, eye_pos: Vector3, eye_size: int):
-	eye_pos *= draw_scale
-	var target_location = target_sprite.global_position
-	var targetvec = (target_location - (global_position + Vector2(eye_pos.x, eye_pos.y)))
-	targetvec /= draw_scale
-	targetvec = targetvec.limit_length(eye_size)
-	iris_pos.x += targetvec.x
-	if targetvec.y < (-eye_size / 3.0) * 2.0:
-		targetvec.y = (-eye_size / 3.0) * 2.0
-	iris_pos.y += targetvec.y
-	return iris_pos
+	match eye_target_type:
+		EYE_TARGET_TYPE.TARGET:
+			var headfwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+			var targetvec = (target_look_location - (global_position + Vector2(eye_pos.x, eye_pos.y)))
+			targetvec = targetvec.limit_length(eye_size)
+			iris_pos.x += targetvec.x
+			if targetvec.y < (-eye_size / 3.0) * 2.0:
+				targetvec.y = (-eye_size / 3.0) * 2.0
+			iris_pos.y += targetvec.y
+			return iris_pos
+		EYE_TARGET_TYPE.USER:
+			return eye_pos
+		EYE_TARGET_TYPE.FORWARD:
+			return iris_pos
 	
 @warning_ignore("shadowed_variable")
 func _process(delta):
@@ -289,7 +344,7 @@ func _draw():
 			ball_position -= center
 			var rotated = ball_position.rotated(Vector3.UP, deg_to_rad(ball_rotation))
 			rotated = rotated.rotated(Vector3.LEFT, deg_to_rad(15))
-			new_ball_positions[i] = {idx = i, pos = rotated}
+			new_ball_positions[i] = {idx = i, pos = rotated, rot = ball.rotation}
 			if i == 6:
 				next_chest_pos = rotated
 		
@@ -304,7 +359,7 @@ func _draw():
 					var rotated = ball_position.rotated(Vector3.UP, deg_to_rad(ball_rotation))
 					rotated = rotated.rotated(Vector3.LEFT, deg_to_rad(15))
 					rotated += new_ball_positions[i].pos
-					new_ball_positions[i] = {idx = i, pos = rotated}
+					new_ball_positions[i] = {idx = i, pos = rotated, rot = new_ball_positions[i].rot + ball.rotation}
 					if i == 6:
 						next_chest_pos = rotated
 		
@@ -313,7 +368,7 @@ func _draw():
 				var base_pos = new_ball_positions[lnz.addballs[i].base]
 				var base_rot = frame.ball_array[lnz.addballs[i].base].rotation
 				var ball_position = calculate_addball_position(i, base_pos, base_rot)
-				new_ball_positions[i] = {idx = i, pos = ball_position}
+				new_ball_positions[i] = {idx = i, pos = ball_position, rot = 0.0}
 				
 		for m in lnz.moves:
 			var base = m.base 
@@ -340,17 +395,19 @@ func _draw():
 			vec *= amt / 100.0
 			new_ball_positions[projected].pos = base_pos + vec
 			
-		if target_sprite != null:
-			for i in head_balls:
+		for i in head_balls:
+			new_ball_positions[i].pos = apply_head_tracking(new_ball_positions[i].pos, new_ball_positions[head_ball].pos)
+			var add_rot = Vector3(rad_to_deg(last_head_rot.x), rad_to_deg(last_head_rot.y), 0)
+			new_ball_positions[i].rot = new_ball_positions[i].rot + add_rot 
+		for i in lnz.addballs:
+			if lnz.addballs[i].base in head_balls:
 				new_ball_positions[i].pos = apply_head_tracking(new_ball_positions[i].pos, new_ball_positions[head_ball].pos)
-			for i in lnz.addballs:
-				if lnz.addballs[i].base in head_balls:
-					new_ball_positions[i].pos = apply_head_tracking(new_ball_positions[i].pos, new_ball_positions[head_ball].pos)
-			var iris_ctr = 0
-			for i in iris_balls:
-				new_ball_positions[i].pos = apply_iris_tracking(new_ball_positions[i].pos, new_ball_positions[eye_balls[iris_ctr]].pos, (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale)
-				new_ball_positions[i].pos.z += (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale
-				iris_ctr += 1
+		var iris_ctr = 0
+		for i in iris_balls:
+			new_ball_positions[i].pos = apply_iris_tracking(new_ball_positions[i].pos, new_ball_positions[eye_balls[iris_ctr]].pos, (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale)
+			new_ball_positions[i].pos.z += (ball_sizes[eye_balls[iris_ctr]] / 2.0) * draw_scale
+			iris_ctr += 1
+			
 			
 		var new_ball_positions_by_id = new_ball_positions
 		new_ball_positions = new_ball_positions.values()
@@ -377,6 +434,8 @@ func _draw():
 					var iris = new_ball_positions_by_id[iris_no]
 					pos = Vector2(iris.pos.x, iris.pos.y) * draw_scale
 					ball_polys[ball.idx].material.set_shader_parameter("iris_center", pos + global_position)
+					#ball_polys[ball.idx].material.set_shader_parameter("head_tilt_deg", ball.rot.z)
+					
 				
 				if ball.idx == 2:
 					belly_position = pos + global_position
@@ -480,6 +539,8 @@ func reset_pet():
 	frames_length = 0
 	loop = false
 	layers = [null, null, null, null, null, null]
+	eye_target_type = EYE_TARGET_TYPE.FORWARD
+	head_target_type = HEAD_TARGET_TYPE.FORWARD
 	
 func set_lnz_raw(lnz_text):
 	lnz = LnzParser.fromtext(lnz_text)
