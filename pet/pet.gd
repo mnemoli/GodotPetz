@@ -45,6 +45,7 @@ var eye_target_type = EYE_TARGET_TYPE.FORWARD
 var target_look_location: Vector2
 
 var layers = [null, null, null, null, null, null]
+var layering_enabled = true
 
 signal animation_done
 signal layered_animation_done(layer)
@@ -230,7 +231,7 @@ func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 			$Icon.global_position = target_look_location
 			#head_pos *= draw_scale
 			var headfwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
-			var targetvec = Vector3(target_look_location.x, target_look_location.y, target_look_location.y) - Vector3(global_position.x, global_position.y, global_position.y)
+			var targetvec = Vector3(target_look_location.x, target_look_location.y, 999) - Vector3(global_position.x, global_position.y, global_position.y)
 			var headfwd2d = Vector2(headfwd.x, headfwd.y)
 			var target2d = Vector2(targetvec.x, targetvec.y)
 			$ForwardLine.points = [Vector2.ZERO, headfwd2d * 50.0]
@@ -288,7 +289,6 @@ func apply_head_tracking(ball_pos: Vector3, head_pos: Vector3):
 func apply_iris_tracking(iris_pos: Vector3, eye_pos: Vector3, eye_size: int):
 	match eye_target_type:
 		EYE_TARGET_TYPE.TARGET:
-			var headfwd = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(ball_rotation))
 			var targetvec = (target_look_location - (global_position + Vector2(eye_pos.x, eye_pos.y)))
 			targetvec = targetvec.limit_length(eye_size)
 			iris_pos.x += targetvec.x
@@ -348,20 +348,26 @@ func _draw():
 			if i == 6:
 				next_chest_pos = rotated
 		
-		var baseframe = frame
-		for layer in layers:
-			if layer != null:
-				var layerframe = ContentLoader.animations.get_frame(layer.start_frame + layer.current) as Dictionary
-				for i in ball_sizes.size():
-					var ball = layerframe.ball_array[i] as Dictionary
-					var base_ball = baseframe.ball_array[i]
-					var ball_position = ball.position - base_ball.position
-					var rotated = ball_position.rotated(Vector3.UP, deg_to_rad(ball_rotation))
-					rotated = rotated.rotated(Vector3.LEFT, deg_to_rad(15))
-					rotated += new_ball_positions[i].pos
-					new_ball_positions[i] = {idx = i, pos = rotated, rot = new_ball_positions[i].rot + ball.rotation}
-					if i == 6:
-						next_chest_pos = rotated
+		if layering_enabled:
+			for layer in layers:
+				if layer != null:
+					var b
+					if layer.base_frame == -1:
+						b = current_frame + start_frame
+					else:
+						b = layer.base_frame
+					var baseframe = ContentLoader.animations.get_frame(b) as Dictionary
+					var layerframe = ContentLoader.animations.get_frame(layer.start_frame + layer.current) as Dictionary
+					for i in ball_sizes.size():
+						var ball = layerframe.ball_array[i] as Dictionary
+						var base_ball = baseframe.ball_array[i]
+						var ball_position = ball.position - base_ball.position
+						var rotated = ball_position.rotated(Vector3.UP, deg_to_rad(ball_rotation))
+						rotated = rotated.rotated(Vector3.LEFT, deg_to_rad(15))
+						rotated += new_ball_positions[i].pos
+						new_ball_positions[i] = {idx = i, pos = rotated, rot = new_ball_positions[i].rot + ball.rotation}
+						if i == 6:
+							next_chest_pos = rotated
 		
 		for i in lnz.addballs:
 			if i not in omitted_balls:
@@ -503,6 +509,15 @@ func play_anim(start_frame, length, direction):
 		var diff = Vector2(last_chest_pos.x, last_chest_pos.y) - Vector2(rot1.x, rot1.y)
 		if apply_anim_movement:
 			position += diff * draw_scale
+		var last_frame_data = ContentLoader.animations.get_frame(last_frame)
+		# find rotation between frames and apply
+		var last_neck_pos = last_frame_data.ball_array[6].position
+		var last_butt_pos = last_frame_data.ball_array[3].position
+		var vec = last_neck_pos - last_butt_pos
+		var angle = atan2(vec.z, vec.x)
+		var vec2 = frame.ball_array[6].position - frame.ball_array[3].position
+		var angle2 = atan2(vec2.z, vec2.x)
+		ball_rotation += rad_to_deg(angle2 - angle)
 		last_chest_pos = Vector3.ZERO
 		reset = false
 		last_frame = start_frame + current_frame
@@ -530,6 +545,7 @@ func get_next_rotation():
 
 func reset_pet():
 	$SCP.reset()
+	print("resetting")
 	current_frame = -999
 	start_frame = 0
 	last_frame = 0

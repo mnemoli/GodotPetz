@@ -71,15 +71,15 @@ layout_mode = 2
 text = "Scp"
 label_settings = SubResource("LabelSettings_76p03")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer"]
+[node name="scptop" type="HBoxContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer" groups=["scptop"]]
 layout_mode = 2
-theme_override_constants/separation = 15
+theme_override_constants/separation = 10
 
-[node name="Scplabel" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/HBoxContainer"]
+[node name="Scplabel" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scptop"]
 layout_mode = 2
 text = "Choose scp"
 
-[node name="MenuButton" type="OptionButton" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/HBoxContainer"]
+[node name="MenuButton" type="OptionButton" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scptop"]
 layout_mode = 2
 size_flags_horizontal = 0
 item_count = 10
@@ -105,6 +105,26 @@ popup/item_8/id = 8
 popup/item_9/text = "Tabby"
 popup/item_9/id = 9
 
+[node name="CheckBox" type="CheckBox" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scptop"]
+layout_mode = 2
+button_pressed = true
+text = "Layering"
+
+[node name="Label" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scptop"]
+layout_mode = 2
+text = "FPS"
+
+[node name="fps" type="OptionButton" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scptop"]
+layout_mode = 2
+item_count = 3
+selected = 0
+popup/item_0/text = "1x"
+popup/item_0/id = 0
+popup/item_1/text = "2x"
+popup/item_1/id = 1
+popup/item_2/text = "0.5x"
+popup/item_2/id = 2
+
 [node name="scpinfo" type="HBoxContainer" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer" groups=["scpinfo"]]
 layout_mode = 2
 theme_override_constants/separation = 10
@@ -117,6 +137,7 @@ text = "Start
 [node name="startstate" type="LineEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
 layout_mode = 2
 text = "130"
+select_all_on_focus = true
 
 [node name="Label2" type="Label" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
 layout_mode = 2
@@ -125,11 +146,12 @@ text = "Action"
 [node name="action" type="LineEdit" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
 layout_mode = 2
 text = "0"
+select_all_on_focus = true
 
 [node name="pickaction" type="OptionButton" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo"]
 layout_mode = 2
 size_flags_horizontal = 0
-disabled = true
+focus_mode = 0
 item_count = 1
 fit_to_longest_item = false
 popup/item_0/text = "1"
@@ -208,7 +230,7 @@ size_flags_horizontal = 3
 text = "Forward"
 editable = false
 
-[node name="Button" type="Button" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer"]
+[node name="Button" type="Button" parent="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer" groups=["the_button"]]
 layout_mode = 2
 toggle_mode = true
 text = "Go
@@ -251,7 +273,9 @@ start_behaviour = ExtResource("2_vr1xd")
 [node name="AnimViewerController" type="Node" parent="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet"]
 script = ExtResource("3_vbln5")
 
-[connection signal="item_selected" from="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/HBoxContainer/MenuButton" to="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet/AnimViewerController" method="_on_scp_selected"]
+[connection signal="item_selected" from="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scptop/MenuButton" to="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet/AnimViewerController" method="_on_scp_selected"]
+[connection signal="toggled" from="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scptop/CheckBox" to="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet/AnimViewerController" method="_on_layering_toggled"]
+[connection signal="item_selected" from="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scptop/fps" to="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet/AnimViewerController" method="_on_fps_item_selected"]
 [connection signal="item_selected" from="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/scpinfo/pickaction" to="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet/AnimViewerController" method="_on_pickaction_item_selected"]
 [connection signal="toggled" from="CanvasLayer/HSplitContainer/VSplitContainer/Panel/HBoxContainer/VBoxContainer/Button" to="CanvasLayer/HSplitContainer/Panel/CenterContainer/pet/AnimViewerController" method="_on_button_toggled"]
 

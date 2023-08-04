@@ -19,6 +19,8 @@ var last_action = -1
 var next_state = -1
 var current_script_no = 0
 var layered_stacks = [[], [], [], [], [], []]
+var current_base_frame = -1
+var step_ctr = 0
 
 signal action_done
 
@@ -36,6 +38,7 @@ func update_graph(this_scp):
 
 func push_action(goal_action):
 	actionStack = find_path(current_state, goal_action)
+	current_base_frame = -1
 	
 func get_action_or_override(action_id):
 	if breed_scp != null and breed_scp.has_action(action_id):
@@ -67,10 +70,14 @@ func find_path(start_state, goal_action):
 				explored[edge.endState] = true
 				var w = {stateId = edge.endState, actionId = edge.actionId, parent = v}
 				q.push_back(w)
+	
+	return []
 
 func _process(_delta):
 	if !actionStack.is_empty() and !processing:
 		processing = true
+		step_ctr = 0
+		var last_chance_succeeded = null
 		var curaction = get_action_or_override(actionStack.front())
 		next_state = curaction.endState
 		pet.loop = last_action == curaction.id
@@ -79,13 +86,9 @@ func _process(_delta):
 		script_stack = curaction.scripts[randscript].duplicate(true)
 		current_script_no = randscript
 		while !script_stack.is_empty():
-			var last_chance_succeeded = null
 			var currentelem = script_stack.pop_front()
+			step_ctr += 1
 			match currentelem:
-				0x4000000F: #enablefudgeaim1
-					script_stack.pop_front()
-				0x40000009: #cuecode1
-					script_stack.pop_front()
 				0x40000014: #gluescriptsball1
 					script_stack.pop_front()
 					pet.update_pos()
@@ -128,21 +131,26 @@ func _process(_delta):
 					var newelems = (get_action_or_override(actionid).scripts[0] as Array).duplicate(true)
 					var cop = newelems.duplicate(true)
 					newelems.push_back(0x40000014)
-					for i in range(times):
-						newelems.append_array(cop)
+					newelems.push_back(-1)
+					if times > 0:
+						for i in range(times - 1):
+							newelems.append_array(cop)
 					newelems.append_array(script_stack)
 					script_stack = newelems
 				0x4000002A: #layeredaction3
 					var layeredaction = script_stack.pop_front()
 					var unknown = script_stack.pop_front()
+					if unknown == 0x4000002F:
+						var rand1 = script_stack.pop_front()
+						var rand2 = script_stack.pop_front()
+						unknown = randi_range(rand1, rand2) - 1
 					var layer = script_stack.pop_front()
 					call_deferred("run_layered_action", layer, layeredaction)
-					print("playing layered action " + str(layeredaction) + " on layer " + str(layer))
 				0x4000002C: #playlayeredactioncallback5
 				#callback6 not used in cat scp
-					var chancetype = script_stack.pop_front()
+					var _chancetype = script_stack.pop_front()
 					var action1 = script_stack.pop_front()
-					var action2 = script_stack.pop_front()
+					var _action2 = script_stack.pop_front()
 					var unknown = script_stack.pop_front()
 					if unknown == 0x4000002F:
 						var rand1 = script_stack.pop_front()
@@ -150,7 +158,6 @@ func _process(_delta):
 						unknown = randi_range(rand1, rand2) - 1
 					var layer = script_stack.pop_front()
 					call_deferred("run_layered_action", layer, action1)
-					print("playing layered action " + str(action1) + " on layer " + str(layer))
 				0x40000033: # seq2
 				# 33 and 34 not used in cat scp
 					var minframe = script_stack.pop_front()
@@ -161,39 +168,41 @@ func _process(_delta):
 						direction = -1
 					print("requesting anim from " + str(minframe) + " to " + str(maxframe))
 					pet.play_anim(minframe, abs(maxframe - minframe) + 1, direction)
+					if current_base_frame == -1:
+						current_base_frame = min(maxframe, minframe)
 					await pet.animation_done
+				0x4000003E: #setlayeredbaseframe2
+					var layer = script_stack.pop_front()
+					var baseframe = script_stack.pop_front()
+					if pet.layers[layer] != null:
+						if baseframe == -1:
+							#pet.layers[layer].base_frame = current_base_frame
+							pet.layers[layer].base_frame = -1
+						else:
+							pet.layers[layer].base_frame = baseframe
 				0x40000055: #startBlockLoop1
 					var times = script_stack.pop_front()
 					if times == 0x4000002F:
 						var rand1 = script_stack.pop_front()
 						var rand2 = script_stack.pop_front()
 						times = randi_range(rand1, rand2) - 1
-					var loopelems = []
-					while script_stack.front() != 0x40000011:
-						loopelems.push_back(script_stack.pop_front())
-					script_stack.pop_front()
+					var loopelems = extract_block()
 					var cp = loopelems.duplicate()
 					if times >= 0:
 						for i in times:
 							loopelems += cp
 					script_stack = loopelems + script_stack
+					print("Looping " + str(times) + " times")
 				0x40000056: #startBlockCallback2
 					var chance1 = []
-					var next = 0
 					script_stack.pop_front()
 					script_stack.pop_front()
-					while next != 0x40000011:
-						next = script_stack.pop_front()
-						chance1.push_back(next)
+					chance1 = extract_block()
 					last_chance_succeeded = true
 					script_stack = chance1 + script_stack
 				0x40000057: #startBlockChance1
 					var chance = script_stack.pop_front()
-					var chancelems = []
-					var next = 0
-					while next != 0x40000011:
-						next = script_stack.pop_front()
-						chancelems.push_back(next)
+					var chancelems = extract_block()
 					var rand = randi_range(0, 100)
 					if rand < chance:
 						script_stack = chancelems + script_stack
@@ -202,11 +211,7 @@ func _process(_delta):
 						last_chance_succeeded = false
 				0x40000059: #startBlockElse0
 					if last_chance_succeeded == false:
-						var chancelems = []
-						var next = 0
-						while next != 0x40000011:
-							next = script_stack.pop_front()
-							chancelems.push_back(next)
+						var chancelems = extract_block()
 						script_stack = chancelems + script_stack
 					last_chance_succeeded = null
 				_: 
@@ -215,6 +220,8 @@ func _process(_delta):
 							print("BIG MISTAKE")
 						else:
 							pet.play_anim(currentelem, 1, 1)
+							if current_base_frame == -1:
+								current_base_frame = currentelem
 							await pet.animation_done
 					else:
 						var verbname = scpVerbs[currentelem] as String
@@ -247,6 +254,7 @@ func reset():
 	next_state = 130
 	
 func run_layered_action(layer, action):
+	print("playing layered action " + str(action) + " on layer " + str(layer))
 	layered_stacks[layer] = get_action_or_override(action).scripts[0].duplicate() as Array
 	while !layered_stacks[layer].is_empty():
 		var elem = layered_stacks[layer].pop_front()
@@ -254,11 +262,16 @@ func run_layered_action(layer, action):
 			0x40000033: # seq2
 				var minframe = layered_stacks[layer].pop_front()
 				var maxframe = layered_stacks[layer].pop_front()
-				var direction = 1
 				if maxframe < minframe:
-					print("uh oh backwards anim")
+					print("uh oh backwards anim in layer - not dealt with")
 				var size = abs(maxframe - minframe) + 1
-				pet.layers[layer] = {start_frame = minframe, size = size, current = 0}
+				var b
+				if pet.layers[layer] != null:
+					b = pet.layers[layer].base_frame
+				else:
+					b = -1
+				pet.layers[layer] = {start_frame = minframe, size = size, current = 0, base_frame = b}
+				print("playing layered frames " + str(minframe) + " to " + str(maxframe) + " base " + str(b))
 				while await pet.layered_animation_done != layer:
 					pass
 			_:
@@ -266,7 +279,13 @@ func run_layered_action(layer, action):
 						if elem < 0 or elem > 16040:
 							print("BIG MISTAKE")
 						else:
-							pet.layers[layer] = {start_frame = elem, size = 1, current = 0}
+							var b
+							if pet.layers[layer] != null:
+								b = pet.layers[layer].base_frame
+							else:
+								b = -1
+							pet.layers[layer] = {start_frame = elem, size = 1, current = 0, base_frame = b}
+							print("playing layered frames " + str(elem) + " to " + str(elem + 1) + " base " + str(b))
 							while await pet.layered_animation_done != layer:
 								pass
 				else:
@@ -281,7 +300,23 @@ func run_layered_action(layer, action):
 						if top == 0x4000002F: #rand2
 							layered_stacks[layer].pop_front()
 							layered_stacks[layer].pop_front()
-				
+							
+
+func extract_block():
+	var loopelems = []
+	var currentelem = -1
+	var depth = 1
+	while !(currentelem == 0x40000011 and depth == 0):
+		currentelem = script_stack.pop_front()
+		if currentelem in blockStarts:
+			depth += 1
+		elif currentelem in blockEnds:
+			depth -= 1
+		loopelems.push_back(currentelem)
+	return loopelems
+
+var blockStarts = [0x40000055, 0x40000056, 0x40000057, 0x40000058, 0x40000059, 0x4000005A]
+var blockEnds = [0x40000011, 0x40000012]
 
 var scpVerbs = {
 	0x40000000 : "startPos",

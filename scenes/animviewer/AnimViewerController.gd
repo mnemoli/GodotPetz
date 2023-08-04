@@ -5,10 +5,12 @@ extends Node
 @onready var curscpinfo = get_tree().get_first_node_in_group("curscpinfo")
 @onready var lookatinfo = get_tree().get_first_node_in_group("lookatinfo")
 @onready var lnz = get_tree().get_first_node_in_group("petlnz")
+@onready var scptopinfo = get_tree().get_first_node_in_group("scptop")
 @onready var scp = pet.get_node("SCP")
 
 func _ready():
 	pet.apply_anim_movement = false
+	_on_scp_selected(0)
 	
 func _on_button_toggled(button_pressed):
 	if !lnz.text.is_empty():
@@ -31,7 +33,7 @@ func _process(_delta):
 	curscpinfo.get_node("curscpinfo/curstate").text = str(scp.current_state)
 	if !scp.actionStack.is_empty():
 		curscpinfo.get_node("curscpinfo/curaction").text = str(scp.actionStack.front())
-	curscpinfo.get_node("curscpinfo/curscript").text = str(scp.current_script_no)
+	curscpinfo.get_node("curscpinfo/curscript").text = str(scp.current_script_no) + " - " + str(scp.step_ctr)
 	curscpinfo.get_node("HBoxContainer/nextstate").text = str(scp.next_state)
 	lookatinfo.get_node("TextEdit").text = str(pet.HEAD_TARGET_TYPE.keys()[pet.head_target_type]) + " " + str(pet.EYE_TARGET_TYPE.keys()[pet.eye_target_type])
 
@@ -39,25 +41,43 @@ func _process(_delta):
 func _on_scp_selected(index):
 	if(index == 0):
 		scp.breed_scp = null
-		scpinfo.get_node("pickaction").disabled = true
-	else:
-		scpinfo.get_node("pickaction").disabled = false
-		var scpname = scps[index - 1]
-		var scpfile = load("res://animations/" + scpname + ".scp") as PetzScpResource
-		var actions = scpfile.get_actions()
-		var menu = scpinfo.get_node("pickaction").get_popup() as PopupMenu
-		menu.clear()
-		for k in actions:
-			menu.add_item(str(k), k)
+	var scpname = scps[index]
+	var scpfile = load("res://animations/" + scpname + ".scp") as PetzScpResource
+	var actions = scpfile.get_actions()
+	var menu = scpinfo.get_node("pickaction").get_popup() as PopupMenu
+	menu.clear()
+	for k in actions:
+		menu.add_item(str(k), k)
+	if (index != 0):
 		scp.breed_scp = scpfile
 
-const scps = ["AC", "BW", "CA", "MC", "OR", "RB", "RD", "SI", "TA"]
-
+const scps = ["CAT", "AC", "BW", "CA", "MC", "OR", "RB", "RD", "SI", "TA"]
 
 func _on_pickaction_item_selected(index):
 	var id = scpinfo.get_node("pickaction").get_popup().get_item_id(index)
 	var scpfile = scp.breed_scp
+	if scpfile == null:
+		scpfile = scp.scp
 	var action = scpfile.get_action(id)
 	scpinfo.get_node("startstate").text = str(action.startState)
 	scpinfo.get_node("action").text = str(id)
 	scpinfo.get_node("pickaction").selected = -1
+
+
+func _on_layering_toggled(button_pressed):
+	pet.layering_enabled = button_pressed
+
+func _unhandled_key_input(event):
+	if event.key_label == KEY_ENTER and event.pressed:
+		var b = get_tree().get_first_node_in_group("the_button") as Button
+		b.button_pressed = !b.button_pressed
+
+
+func _on_fps_item_selected(index):
+	match index:
+		0:
+			pet.anim_speed_divider = 2
+		1:
+			pet.anim_speed_divider = 1
+		2:
+			pet.anim_speed_divider = 4
